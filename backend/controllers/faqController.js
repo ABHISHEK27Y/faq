@@ -65,11 +65,11 @@ const getFAQs = async (req, res) => {
       });
 
       // Filter out low relevance and sort by descending similarity
-      const threshold = 0.5; // Arbitrary threshold
-      scoredFaqs.sort((a, b) => b.similarity - a.similarity);
+      const threshold = 0.55; // Strict threshold to ensure relevance
+      const filteredFaqs = scoredFaqs.filter(sf => sf.similarity >= threshold);
+      filteredFaqs.sort((a, b) => b.similarity - a.similarity);
       
-      // We can apply a threshold, but for now we'll just sort to ensure the best matches are first
-      const sortedFaqs = scoredFaqs.map(sf => sf.faq);
+      const sortedFaqs = filteredFaqs.map(sf => sf.faq);
 
       const count = sortedFaqs.length;
       const paginatedFaqs = sortedFaqs.slice(pageSize * (page - 1), pageSize * page);
