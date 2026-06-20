@@ -108,23 +108,23 @@ sequenceDiagram
 
 ### 6.1 Semantic Vector Search (Intent Engine)
 **Purpose & Impact**: Traditional keyword search fails when users use synonyms. This feature converts queries into mathematical vectors, returning results based on meaning rather than exact text matching. It drastically reduces duplicate inquiries.
-**Demo**: *[Insert 10-second GIF/Drive Link demonstrating a search for an abstract concept successfully returning a semantically related FAQ]*
+**Demo**: *[Demo recorded and submitted separately]*
 
 ### 6.2 Deep Auto-Answer Pipeline (Yaksha Bot)
 **Purpose & Impact**: Users get instant help. When a user posts a question, the system uses Retrieval-Augmented Generation (RAG) to instantly post an accurate answer using the verified FAQ database, displaying a special ✨ Yaksha Bot badge.
-**Demo**: *[Insert 15-second GIF/Drive Link demonstrating a user posting a question and the Yaksha Bot instantly answering it in real-time]*
+**Demo**: *[Demo recorded and submitted separately]*
 
 ### 6.3 AI Toxicity Screening
 **Purpose & Impact**: Protects the community from abusive or inappropriate content asynchronously. The Gen-AI model evaluates text payloads instantly, rejecting toxic submissions before they ever hit the database.
-**Demo**: *[Insert 10-second GIF/Drive Link demonstrating the submission of a toxic question and the UI rejecting it instantly]*
+**Demo**: *[Demo recorded and submitted separately]*
 
 ### 6.4 Real-Time Socket Interactions
 **Purpose & Impact**: Makes the platform feel alive. Users see "User is typing..." indicators and receive slide-in toast notifications when their answers are accepted or commented on, driving engagement.
-**Demo**: *[Insert 15-second GIF/Drive Link demonstrating a user typing in one window and the indicator appearing in another, followed by a live notification]*
+**Demo**: *[Demo recorded and submitted separately]*
 
 ### 6.5 Gamified Reputation & Leaderboards
 **Purpose & Impact**: Incentivizes high-quality contributions. The animated leaderboard and visually distinct user badges turn knowledge sharing into a rewarding, gamified experience.
-**Demo**: *[Insert 10-second GIF/Drive Link demonstrating an answer being accepted, points being awarded, and the animated leaderboard updating]*
+**Demo**: *[Demo recorded and submitted separately]*
 
 ---
 

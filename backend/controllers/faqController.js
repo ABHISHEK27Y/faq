@@ -53,26 +53,40 @@ const getFAQs = async (req, res) => {
       // SEMANTIC VECTOR SEARCH
       const queryEmbedding = await generateEmbedding(req.query.keyword);
       
-      // Fetch all published FAQs (matching category if provided)
-      const allFaqs = await FAQ.find({ ...categoryFilter, status: 'published' })
-        .populate('category', 'name slug')
-        .populate('author', 'username');
+      // Handle empty query embeddings (API failure)
+      if (!queryEmbedding || queryEmbedding.length === 0) {
+         return res.json({ faqs: [], page: 1, pages: 1 });
+      }
+      
+      // Fetch ONLY embeddings and IDs to save memory and avoid full population before ranking
+      const allFaqsLean = await FAQ.find({ ...categoryFilter, status: 'published' })
+        .select('embedding _id')
+        .lean();
 
       // Calculate cosine similarity for each FAQ
-      const scoredFaqs = allFaqs.map(faq => {
+      const scoredFaqs = allFaqsLean.map(faq => {
         const similarity = cosineSimilarity(queryEmbedding, faq.embedding);
-        return { faq, similarity };
+        return { _id: faq._id, similarity };
       });
 
       // Filter out low relevance and sort by descending similarity
-      const threshold = 0.55; // Strict threshold to ensure relevance
+      const threshold = 0.55; 
       const filteredFaqs = scoredFaqs.filter(sf => sf.similarity >= threshold);
       filteredFaqs.sort((a, b) => b.similarity - a.similarity);
       
-      const sortedFaqs = filteredFaqs.map(sf => sf.faq);
+      // Paginate the IDs first
+      const count = filteredFaqs.length;
+      const paginatedIds = filteredFaqs.slice(pageSize * (page - 1), pageSize * page).map(sf => sf._id);
 
-      const count = sortedFaqs.length;
-      const paginatedFaqs = sortedFaqs.slice(pageSize * (page - 1), pageSize * page);
+      // Fetch the full populated documents ONLY for the paginated subset
+      const paginatedFaqsUnsorted = await FAQ.find({ _id: { $in: paginatedIds } })
+        .populate('category', 'name slug')
+        .populate('author', 'username');
+
+      // Restore the similarity sort order
+      const paginatedFaqs = paginatedIds.map(id => 
+        paginatedFaqsUnsorted.find(faq => faq._id.toString() === id.toString())
+      ).filter(Boolean);
 
       return res.json({ faqs: paginatedFaqs, page, pages: Math.ceil(count / pageSize) });
     }
@@ -230,8 +244,14 @@ const reviewSuggestion = async (req, res) => {
   } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
+let isBackfilling = false;
+
 const backfillEmbeddings = async (req, res) => {
   try {
+    if (isBackfilling) {
+      return res.status(429).json({ message: 'A background backfill job is already running.' });
+    }
+
     const faqs = await FAQ.find({ 
       status: 'published', 
       $or: [
@@ -243,23 +263,28 @@ const backfillEmbeddings = async (req, res) => {
       return res.json({ message: 'All published FAQs already have embeddings.' });
     }
 
+    isBackfilling = true;
     res.json({ message: `Started background backfill for ${faqs.length} FAQs.` });
 
     // Run in background to avoid blocking and handle rate limits
     setTimeout(async () => {
-      for (const faq of faqs) {
-        try {
-          const embeddingText = `${faq.title}\n${faq.question}\n${faq.answer}`;
-          faq.embedding = await generateEmbedding(embeddingText);
-          await faq.save();
-          console.log(`✅ Backfilled embedding for FAQ: ${faq.title}`);
-          // Basic delay to avoid hitting Gemini rate limits (e.g., 2 seconds)
-          await new Promise(r => setTimeout(r, 2000));
-        } catch (err) {
-          console.error(`❌ Failed to backfill FAQ: ${faq.title}`, err.message);
+      try {
+        for (const faq of faqs) {
+          try {
+            const embeddingText = `${faq.title}\n${faq.question}\n${faq.answer}`;
+            faq.embedding = await generateEmbedding(embeddingText);
+            await faq.save();
+            console.log(`✅ Backfilled embedding for FAQ: ${faq.title}`);
+            // Basic delay to avoid hitting Gemini rate limits (e.g., 2 seconds)
+            await new Promise(r => setTimeout(r, 2000));
+          } catch (err) {
+            console.error(`❌ Failed to backfill FAQ: ${faq.title}`, err.message);
+          }
         }
+        console.log('🎉 Background embedding backfill complete!');
+      } finally {
+        isBackfilling = false;
       }
-      console.log('🎉 Background embedding backfill complete!');
     }, 0);
 
   } catch (error) { res.status(500).json({ message: error.message }); }

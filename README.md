@@ -52,7 +52,7 @@ The user-facing app gives authenticated users full participation in the knowledg
 
 ## 🏗️ Technology Stack
 
-- **Frontend**: Next.js 14+ (App Router), React, Tailwind CSS v4, Axios
+- **Frontend**: Next.js 16+ (App Router), React, Tailwind CSS v4, Axios
 - **Backend**: Node.js, Express.js, Socket.io
 - **Database**: MongoDB (via `mongodb-memory-server` for local persistent dev, easily swappable to Atlas), Mongoose
 - **Authentication**: Passport.js (Google OAuth), JSON Web Tokens (JWT), bcryptjs
