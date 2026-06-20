@@ -12,11 +12,14 @@ const generateChatResponse = async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
 
+    // Sanitize message to prevent prompt injection
+    const sanitizedMessage = message.replace(/["]/g, '\\"').replace(/[{}]/g, '');
+
     const prompt = `
       You are Yaksha, a Gen-Z / Hinglish AI assistant for our FAQ platform.
       Respond to the user in a chill, relatable, slightly Gen-Z tone using a mix of Hindi and English (Hinglish).
       Do not sound like a corporate robot. Keep it short, helpful, and vibe with the user.
-      User message: "${message}"
+      User message: "${sanitizedMessage}"
     `;
 
     const result = await model.generateContent(prompt);

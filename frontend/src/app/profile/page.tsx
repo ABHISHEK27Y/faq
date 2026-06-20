@@ -209,7 +209,7 @@ export default function ProfilePage() {
             <div>
               <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
                 {displayUser.username}
-                <span className="badge-soft !bg-indigo-100 !text-indigo-700 !px-3 !py-1 text-sm">{displayUser.role || 'Member'}</span>
+                <span className="badge-soft bg-indigo-100! text-indigo-700! px-3! py-1! text-sm">{displayUser.role || 'Member'}</span>
               </h1>
               <p className="text-slate-500 font-medium mt-1">{displayUser.email}</p>
             </div>

@@ -16,7 +16,8 @@ export default function Navbar() {
 
   useEffect(() => {
     if (user) {
-      axios.get('http://localhost:5000/api/notifications', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      axios.get(`${apiUrl}/api/notifications`, {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       .then(res => setNotifications(res.data))
@@ -28,7 +29,8 @@ export default function Navbar() {
 
   const markAsRead = async (id: string, link: string) => {
     try {
-      await axios.patch(`http://localhost:5000/api/notifications/${id}/read`, {}, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      await axios.patch(`${apiUrl}/api/notifications/${id}/read`, {}, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
@@ -40,7 +42,8 @@ export default function Navbar() {
 
   const markAllAsRead = async () => {
     try {
-      await axios.post(`http://localhost:5000/api/notifications/read-all`, {}, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      await axios.post(`${apiUrl}/api/notifications/read-all`, {}, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));

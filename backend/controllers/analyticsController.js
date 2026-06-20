@@ -66,14 +66,11 @@ const logSearch = async (req, res) => {
     if (!query || query.trim() === '') return res.status(200).json({});
     
     const term = query.toLowerCase().trim();
-    const existing = await SearchLog.findOne({ query: term });
-    
-    if (existing) {
-      existing.count += 1;
-      await existing.save();
-    } else {
-      await SearchLog.create({ query: term });
-    }
+    await SearchLog.findOneAndUpdate(
+      { query: term },
+      { $inc: { count: 1 } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
     
     res.status(200).json({ success: true });
   } catch (error) {

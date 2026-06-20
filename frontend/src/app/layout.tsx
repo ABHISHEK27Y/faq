@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import ChatbotWidget from "@/components/ChatbotWidget";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SocketProvider } from "@/contexts/SocketContext";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -25,20 +26,22 @@ export default function RootLayout({
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-slate-50 text-slate-900`} suppressHydrationWarning>
-        <AuthProvider>
-          <SocketProvider>
-            <div className="flex h-screen overflow-hidden">
-              <Sidebar />
-              <div className="flex flex-1 flex-col overflow-hidden lg:pl-72">
-                <Navbar />
-                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
-                  {children}
-                </main>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            <SocketProvider>
+              <div className="flex h-screen overflow-hidden">
+                <Sidebar />
+                <div className="flex flex-1 flex-col overflow-hidden lg:pl-72">
+                  <Navbar />
+                  <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
+                    {children}
+                  </main>
+                </div>
+                <ChatbotWidget />
               </div>
-              <ChatbotWidget />
-            </div>
-          </SocketProvider>
-        </AuthProvider>
+            </SocketProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -230,6 +230,17 @@ const acceptAnswer = async (req, res) => {
     if (!answer) return res.status(404).json({ message: 'Answer not found' });
     
     const question = await Question.findById(answer.question);
+    if (!question) return res.status(404).json({ message: 'Question not found' });
+
+    // Authorization guard: Only the question author can accept an answer
+    if (question.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only the question author can accept an answer' });
+    }
+
+    // Idempotency guards
+    if (answer.isAccepted) return res.status(400).json({ message: 'Answer is already accepted' });
+    if (question.isAnswered) return res.status(400).json({ message: 'Question already has an accepted answer' });
+
     answer.isAccepted = true;
     question.isAnswered = true;
     

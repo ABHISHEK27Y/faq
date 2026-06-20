@@ -153,7 +153,7 @@ export default function LeaderboardPage() {
                           <td className="py-4 px-6 text-right">
                             <div className="flex items-center justify-end gap-3">
                               <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
-                                <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(100, (user.reputation / top3[0].reputation) * 100)}%` }}></div>
+                                <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${top3[0]?.reputation ? Math.min(100, (user.reputation / top3[0].reputation) * 100) : 0}%` }}></div>
                               </div>
                               <span className="font-black text-indigo-600 text-lg w-12 text-right">{user.reputation}</span>
                             </div>

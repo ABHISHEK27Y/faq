@@ -4,6 +4,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const passport = require('passport');
 const session = require('express-session');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const bcrypt = require('bcryptjs');
 const seedDatabase = require('./seedData');
 const cors = require('cors');
 const http = require('http');
@@ -93,10 +94,14 @@ passport.use(new GoogleStrategy({
       if (!user) {
         // Create new user if they don't exist
         const isSuperAdmin = profile.emails[0].value === 'abhishekyadav270705@gmail.com';
+        const dummyPassword = 'google_oauth_dummy_password_' + Date.now();
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(dummyPassword, salt);
+        
         user = await User.create({
           username: profile.displayName.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 1000),
           email: profile.emails[0].value,
-          password: 'google_oauth_dummy_password_' + Date.now(),
+          password: hashedPassword,
           role: isSuperAdmin ? 'admin' : 'user',
           needsOnboarding: true
         });
