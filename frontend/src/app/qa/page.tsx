@@ -27,7 +27,7 @@ export default function QaPage() {
   }, [sort]);
 
   return (
-    <>
+    <div style={{ maxWidth: 1000, marginTop: '2rem' }}>
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 mb-3 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-widest">
@@ -130,6 +130,6 @@ export default function QaPage() {
           })
         )}
       </div>
-    </>
+    </div>
   );
 }

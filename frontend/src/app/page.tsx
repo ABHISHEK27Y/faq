@@ -1,49 +1,25 @@
 "use client";
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useCountUp } from '@/hooks/useCountUp';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-/* ── Stat card with count-up ── */
-function StatCard({ label, value, featured = false }: { label: string; value: number; featured?: boolean }) {
-  const count = useCountUp(value);
-  return (
-    <div className={`metric-cell${featured ? ' featured' : ''}`}>
-      <div className="metric-number">{count.toLocaleString()}</div>
-      <div className="metric-label">{label}</div>
-    </div>
-  );
-}
+const CATEGORY_STYLES = [
+  { bg: '#FFF7ED', iconBg: '#F97316', color: '#C2410C', icon: 'bi-book' },
+  { bg: '#F0FDF4', iconBg: '#22C55E', color: '#15803D', icon: 'bi-mortarboard' },
+  { bg: '#FAF5FF', iconBg: '#A855F7', color: '#7E22CE', icon: 'bi-gear' },
+  { bg: '#EFF6FF', iconBg: '#3B82F6', color: '#1D4ED8', icon: 'bi-wallet2' },
+  { bg: '#FDF2F8', iconBg: '#EC4899', color: '#BE185D', icon: 'bi-house' },
+  { bg: '#F0FDFA', iconBg: '#14B8A6', color: '#0F766E', icon: 'bi-people' },
+];
 
-/* ── Mini bar chart (pure CSS) ── */
-const DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-
-function MiniBarChart({ faqs }: { faqs: any[] }) {
-  const data = DAYS.map((label, i) => ({ label, value: faqs[i]?.viewCount ?? 0 }));
-  const max = Math.max(...data.map(d => d.value), 1);
-  return (
-    <div className="bar-chart-wrap">
-      <div className="bar-chart">
-        {data.map(({ label, value }) => (
-          <div key={label} className="bar-col">
-            <div className="bar-fill" style={{ height: `${Math.round((value / max) * 60)}px` }} />
-            <span className="bar-label">{label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ── Dot colors cycling ── */
-const DOT_COLORS = ['var(--clay)', 'var(--sage)', 'var(--coral-dot)', 'var(--clay)', 'var(--sage)'];
+const FAQ_DOT_COLORS = ['#F97316', '#A855F7', '#22C55E', '#3B82F6', '#EC4899', '#14B8A6'];
 
 export default function Home() {
-  const [faqs, setFaqs] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [analytics, setAnalytics] = useState<any>({ totalFaqs: 0, totalQuestions: 0, mostViewed: [] });
+  const [faqs, setFaqs]             = useState<any[]>([]);
+  const [categories, setCategories]  = useState<any[]>([]);
+  const [analytics, setAnalytics]    = useState<any>({ totalFaqs: 0, totalQuestions: 0 });
 
   useEffect(() => {
     Promise.all([
@@ -59,150 +35,161 @@ export default function Home() {
       .catch(console.error);
   }, []);
 
-  const totalViews = faqs.reduce((s, f) => s + (f.viewCount ?? 0), 0);
-  const maxViews   = Math.max(...faqs.map(f => f.viewCount ?? 0), 1);
-
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-  }).toUpperCase();
+  const popularFaqs = [...faqs]
+    .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
+    .slice(0, 6);
 
   return (
-    <div className="dash-canvas">
+    <>
+      {/* ── Hero ── */}
+      <div className="hero-section">
+        <p className="eyebrow">Knowledge Base</p>
+        <h1 className="hero-title">How can we help? 👋</h1>
 
-      {/* ── Page header ── */}
-      <div className="page-header">
-        <div>
-          <p className="eyebrow" style={{ marginBottom: 6 }}>{today}</p>
-          <h1 className="page-title">Knowledge Base</h1>
-        </div>
-        <div className="page-header-actions">
-          <Link href="/faqs" className="btn-ghost">
-            <i className="bi bi-search" /> Browse
-          </Link>
-          <Link href="/qa/ask" className="btn-primary">
-            <i className="bi bi-plus" /> Ask Question
-          </Link>
-        </div>
+        <form className="hero-search-form" action="/faqs" method="get">
+          <i className="bi bi-search" />
+          <input
+            className="hero-search-input"
+            type="search"
+            name="q"
+            placeholder="Search FAQs, topics, guides…"
+            autoComplete="off"
+          />
+          <button type="submit" className="hero-search-btn">Search</button>
+        </form>
+
+        <p className="hero-sub">
+          {analytics.totalFaqs ?? faqs.length} articles &nbsp;·&nbsp; {categories.length} categories
+        </p>
       </div>
 
-      {/* ── Metrics row ── */}
-      <div className="metrics-row">
-        <StatCard label="Published FAQs"      value={analytics.totalFaqs     ?? 0} featured />
-        <StatCard label="Community Questions" value={analytics.totalQuestions ?? 0} />
-        <StatCard label="Categories"          value={categories.length} />
-        <StatCard label="Total Views"         value={totalViews} />
-      </div>
+      {/* ── Main content ── */}
+      <div className="page-shell">
 
-      {/* ── Two-column content grid ── */}
-      <div className="content-grid">
-
-        {/* Left — FAQ table */}
-        <div className="panel">
-          <div className="panel-header">
-            <span className="panel-title">Trending FAQs</span>
-            <Link
-              href="/faqs"
-              className="btn-ghost"
-              style={{ fontSize: '0.72rem', padding: '3px 10px', minHeight: 'auto' }}
-            >
-              View all
-            </Link>
-          </div>
-          <div className="data-table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Views</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {faqs.map(faq => (
-                  <tr key={faq._id}>
-                    <td style={{ maxWidth: 220 }}>
-                      <Link
-                        href={`/faqs/${faq.slug}`}
-                        style={{ fontWeight: 500, color: 'var(--ink)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                      >
-                        {faq.title}
-                      </Link>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--graphite)' }}>
-                        {faq.category?.name ?? '—'}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div className="progress-bar-wrap">
-                          <div
-                            className="progress-bar-fill"
-                            style={{ width: `${Math.round(((faq.viewCount ?? 0) / maxViews) * 100)}%` }}
-                          />
-                        </div>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--graphite)', fontFamily: 'var(--font-mono)' }}>
-                          {faq.viewCount ?? 0}
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`status-pill ${faq.status ?? 'draft'}`}>
-                        {faq.status ?? 'draft'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {faqs.length === 0 && (
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', color: 'var(--graphite)', padding: '2rem', fontSize: '0.875rem' }}>
-                      No FAQs yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        {/* Category cards */}
+        <div className="section-header" style={{ marginBottom: '1rem' }}>
+          <h2 className="section-title">Browse by Category</h2>
+          <Link href="/faqs" className="btn-ghost" style={{ fontSize: '0.78rem', minHeight: 32, padding: '0 12px' }}>
+            All FAQs
+          </Link>
         </div>
 
-        {/* Right — Activity + Bar chart */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
-
-          {/* Most viewed activity feed */}
-          <div className="panel">
-            <div className="panel-header">
-              <span className="panel-title">Most Viewed</span>
-            </div>
-            {analytics.mostViewed?.length > 0 ? (
-              analytics.mostViewed.slice(0, 5).map((item: any, i: number) => (
-                <div key={item._id} className="activity-item">
-                  <div className="activity-dot" style={{ background: DOT_COLORS[i % DOT_COLORS.length] }} />
-                  <div style={{ minWidth: 0 }}>
-                    <Link href={`/faqs/${item.slug}`} className="activity-lead" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                      {item.title}
-                    </Link>
-                    <div className="activity-time">{(item.viewCount ?? 0).toLocaleString()} views</div>
-                  </div>
+        <div className="category-grid">
+          {categories.length > 0 ? categories.map((cat, i) => {
+            const s = CATEGORY_STYLES[i % CATEGORY_STYLES.length];
+            const count = faqs.filter(f =>
+              f.category?._id === cat._id || f.category === cat._id
+            ).length;
+            return (
+              <Link
+                key={cat._id}
+                href={`/faqs?categorySlug=${cat.slug}`}
+                className="category-card"
+                style={{ background: s.bg, borderColor: s.bg }}
+              >
+                <div
+                  className="category-icon-wrap"
+                  style={{ background: s.iconBg }}
+                >
+                  <i className={`bi ${s.icon}`} />
                 </div>
-              ))
-            ) : (
-              <p style={{ padding: '1.25rem 20px', fontSize: '0.85rem', color: 'var(--graphite)' }}>
-                No data yet.
-              </p>
-            )}
-          </div>
-
-          {/* View distribution bar chart */}
-          <div className="panel">
-            <div className="panel-header">
-              <span className="panel-title">View Distribution</span>
-            </div>
-            <MiniBarChart faqs={faqs} />
-          </div>
-
+                <div className="category-body">
+                  <div className="category-name" style={{ color: s.color }}>{cat.name}</div>
+                  <div className="category-count" style={{ color: s.color }}>{count || cat.faqCount || 0} articles</div>
+                </div>
+                <i className="bi bi-arrow-right category-arrow" style={{ color: s.color }} />
+              </Link>
+            );
+          }) : (
+            <p style={{ gridColumn: '1/-1', color: 'var(--graphite)', fontSize: '0.875rem', padding: '1rem 0' }}>
+              No categories yet.
+            </p>
+          )}
         </div>
+
+        {/* Popular questions */}
+        <div className="section-header" style={{ marginTop: '2rem', marginBottom: '1rem' }}>
+          <h2 className="section-title">Popular Questions</h2>
+          <Link href="/faqs" className="btn-ghost" style={{ fontSize: '0.78rem', minHeight: 32, padding: '0 12px' }}>
+            View all
+          </Link>
+        </div>
+
+        <div className="faq-list">
+          {popularFaqs.length > 0 ? popularFaqs.map((faq, i) => (
+            <Link key={faq._id} href={`/faqs/${faq.slug}`} className="faq-list-item">
+              <i
+                className="bi bi-question-circle-fill faq-list-q"
+                style={{ color: FAQ_DOT_COLORS[i % FAQ_DOT_COLORS.length] }}
+              />
+              <div className="faq-list-body">
+                <span className="faq-list-title">{faq.title}</span>
+                <span className="faq-list-meta">
+                  {faq.category?.name ?? 'General'}&nbsp;·&nbsp;{(faq.viewCount ?? 0).toLocaleString()} views
+                </span>
+              </div>
+              <i className="bi bi-chevron-right faq-list-chevron" />
+            </Link>
+          )) : (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--graphite)', fontSize: '0.875rem' }}>
+              No FAQs published yet.
+            </div>
+          )}
+        </div>
+
+        {/* Ask CTA */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '22px 28px',
+            background: 'linear-gradient(135deg, #FFF7ED 0%, #FAF5FF 100%)',
+            border: '1.5px solid #EDD9FF',
+            borderRadius: 'var(--radius-lg)',
+            marginBottom: '2rem',
+            gap: '1rem',
+          }}
+        >
+          <div>
+            <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--ink)', marginBottom: 4 }}>
+              Can&apos;t find what you&apos;re looking for? 🤔
+            </p>
+            <p style={{ fontSize: '0.8rem', color: 'var(--graphite)' }}>
+              Ask a question and the community will help.
+            </p>
+          </div>
+          <Link
+            href="/qa/ask"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '10px 20px',
+              background: 'linear-gradient(135deg, #F97316 0%, #A855F7 100%)',
+              color: '#fff',
+              borderRadius: '99px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              textDecoration: 'none',
+              flexShrink: 0,
+              boxShadow: '0 4px 14px rgba(168,85,247,0.3)',
+            }}
+          >
+            <i className="bi bi-plus-circle" /> Ask a Question
+          </Link>
+        </div>
+
+        {/* Stats strip */}
+        <div className="stats-strip">
+          <span>✦ {analytics.totalFaqs ?? faqs.length} published FAQs</span>
+          <span>·</span>
+          <span>{categories.length} categories</span>
+          <span>·</span>
+          <span>{analytics.totalQuestions ?? 0} community questions</span>
+        </div>
+
       </div>
-    </div>
+    </>
   );
 }
