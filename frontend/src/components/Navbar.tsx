@@ -15,144 +15,200 @@ export default function Navbar() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      axios.get(`${apiUrl}/api/notifications`, {
-        headers: { Authorization: `Bearer ${user.token}` }
-      })
+    if (!user) { setNotifications([]); return; }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    axios
+      .get(`${apiUrl}/api/notifications`, { headers: { Authorization: `Bearer ${(user as any).token}` } })
       .then(res => setNotifications(res.data))
       .catch(console.error);
-    } else {
-      setNotifications([]);
-    }
   }, [user]);
 
   const markAsRead = async (id: string, link: string) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       await axios.patch(`${apiUrl}/api/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${user?.token}` }
+        headers: { Authorization: `Bearer ${(user as any)?.token}` },
       });
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
       if (link) window.location.href = link;
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const markAllAsRead = async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       await axios.post(`${apiUrl}/api/notifications/read-all`, {}, {
-        headers: { Authorization: `Bearer ${user?.token}` }
+        headers: { Authorization: `Bearer ${(user as any)?.token}` },
       });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
+  const avatarSrc = (user as any)?.avatar ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'U')}&background=1C1B19&color=FAFAF8&size=64`;
+
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white px-6 py-3">
-      <div className="flex items-center gap-4">
-        <button onClick={() => window.dispatchEvent(new Event('toggleSidebar'))} id="sidebar-toggle" type="button" className="icon-btn lg:!hidden" aria-label="Open sidebar">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-        </button>
-        
-        <form className="relative max-w-xl flex-1" action="/faqs">
-          <i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <input className="search-input" type="search" name="q" placeholder="Search the FAQ — type a keyword (e.g. NOC, hostel, stipend)" id="global-search" />
-        </form>
-        
-        <div className="relative">
-          <button onClick={() => setShowDropdown(!showDropdown)} className="icon-btn relative bg-white/50 hover:bg-white/80" aria-label="Notifications">
-            <i className="bi bi-bell"></i>
-            {unreadNotifications > 0 && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse"></span>}
-          </button>
+    <header className="top-bar">
+      {/* Search */}
+      <form className="relative flex-1 max-w-lg" action="/faqs" method="get">
+        <i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--graphite)] text-sm" />
+        <input
+          className="search-input"
+          type="search"
+          name="q"
+          placeholder="Search FAQs…"
+          aria-label="Search"
+        />
+      </form>
 
-          {showDropdown && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
-              <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <span className="font-bold text-slate-800">Notifications</span>
-                {unreadNotifications > 0 && (
-                  <button onClick={markAllAsRead} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Mark all as read</button>
-                )}
-              </div>
-              <div className="max-h-96 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-slate-500 text-sm">No new notifications</div>
-                ) : (
-                  notifications.map(n => (
-                    <div 
-                      key={n._id} 
-                      onClick={() => markAsRead(n._id, n.link)}
-                      className={`p-3 border-b border-slate-50 cursor-pointer hover:bg-white/80 transition-colors flex gap-3 ${!n.isRead ? 'bg-indigo-50/50' : ''}`}
-                    >
-                      <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${!n.isRead ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]' : 'bg-transparent'}`}></div>
-                      <div>
-                        <p className={`text-sm ${!n.isRead ? 'text-slate-900 font-bold' : 'text-slate-600'}`}>{n.message}</p>
-                        <p className="text-xs text-slate-400 mt-1">{new Date(n.createdAt).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+      {/* Notifications */}
+      <div className="relative">
+        <button
+          onClick={() => { setShowDropdown(v => !v); setShowProfileDropdown(false); }}
+          className="icon-btn relative"
+          aria-label="Notifications"
+        >
+          <i className="bi bi-bell text-sm" />
+          {unreadNotifications > 0 && (
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--coral-dot)]" />
           )}
-        </div>
-        
-        <div className="relative ml-2">
-          {user ? (
-            <div className="relative">
-              <button 
-                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition-all hover:border-indigo-200 hover:bg-slate-50 focus:outline-none"
-              >
-                <img 
-                  src={user.avatar || `https://ui-avatars.com/api/?name=${user.username}&background=random&color=fff&size=64`} 
-                  alt={user.username} 
-                  className="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover"
-                />
-                <span className="text-sm font-bold text-slate-700 hidden sm:block">{user.username}</span>
-                <i className={`bi bi-chevron-down text-xs text-slate-400 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`}></i>
-              </button>
+        </button>
 
-              {showProfileDropdown && (
-                <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50 origin-top-right">
-                  <div className="p-4 border-b border-slate-100 bg-slate-50">
-                    <p className="text-sm font-bold text-slate-900 truncate">{user.username}</p>
-                    <p className="text-xs font-medium text-slate-500 truncate">{user.email}</p>
-                  </div>
-                  <div className="p-2 space-y-1">
-                    {user.role === 'admin' && (
-                      <Link href="/moderation" onClick={() => setShowProfileDropdown(false)} className="flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-rose-600 rounded-xl hover:bg-rose-50/80 transition-colors">
-                        <i className="bi bi-shield-lock-fill text-lg"></i> Admin Dashboard
-                      </Link>
-                    )}
-                    <Link href="/profile" onClick={() => setShowProfileDropdown(false)} className="flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-slate-700 rounded-xl hover:bg-indigo-50/80 hover:text-indigo-700 transition-colors">
-                      <i className="bi bi-person text-lg"></i> My Profile
-                    </Link>
-                    <Link href="/profile" onClick={() => setShowProfileDropdown(false)} className="flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-slate-700 rounded-xl hover:bg-indigo-50/80 hover:text-indigo-700 transition-colors">
-                      <i className="bi bi-gear text-lg"></i> Settings
-                    </Link>
-                  </div>
-                  <div className="p-2 border-t border-white/20">
-                    <button 
-                      onClick={logout} 
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-rose-600 rounded-xl hover:bg-rose-50/80 transition-colors"
-                    >
-                      <i className="bi bi-box-arrow-right text-lg"></i> Sign Out
-                    </button>
-                  </div>
-                </div>
+        {showDropdown && (
+          <div
+            className="absolute right-0 mt-2 w-80 z-50 overflow-hidden"
+            style={{ border: '1px solid var(--hairline)', borderRadius: 'var(--radius-md)', background: 'var(--surface)' }}
+          >
+            <div
+              className="flex items-center justify-between px-4 py-3"
+              style={{ borderBottom: '1px solid var(--hairline)', background: 'var(--paper)' }}
+            >
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--graphite)' }}>
+                Notifications
+              </span>
+              {unreadNotifications > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  style={{ fontSize: '0.75rem', color: 'var(--clay)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  Mark all read
+                </button>
               )}
             </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Link href="/login" className="px-5 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors hidden sm:block">Login</Link>
+            <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+              {notifications.length === 0 ? (
+                <p style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--graphite)' }}>
+                  No new notifications
+                </p>
+              ) : (
+                notifications.map(n => (
+                  <div
+                    key={n._id}
+                    onClick={() => markAsRead(n._id, n.link)}
+                    className="flex gap-3 cursor-pointer"
+                    style={{
+                      padding: '10px 16px',
+                      borderBottom: '1px solid var(--hairline)',
+                      background: !n.isRead ? 'var(--clay-soft)' : 'var(--surface)',
+                      transition: 'background 120ms ease',
+                    }}
+                  >
+                    <div style={{
+                      marginTop: 6,
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                      background: !n.isRead ? 'var(--coral-dot)' : 'var(--hairline)',
+                    }} />
+                    <div>
+                      <p style={{ fontSize: '0.82rem', fontWeight: n.isRead ? 400 : 600, color: 'var(--ink)', marginBottom: 2 }}>
+                        {n.message}
+                      </p>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--graphite)', fontFamily: 'var(--font-mono)' }}>
+                        {new Date(n.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
+
+      {/* Profile */}
+      <div className="relative">
+        {user ? (
+          <>
+            <button
+              onClick={() => { setShowProfileDropdown(v => !v); setShowDropdown(false); }}
+              className="flex items-center gap-2"
+              style={{
+                background: 'none',
+                border: '1px solid var(--hairline)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '5px 10px',
+                cursor: 'pointer',
+                transition: 'border-color 140ms ease',
+              }}
+            >
+              <img src={avatarSrc} alt={user.username} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }} />
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--ink)' }} className="hidden sm:block">
+                {user.username}
+              </span>
+              <i className={`bi bi-chevron-down text-[10px] text-[var(--graphite)] transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showProfileDropdown && (
+              <div
+                className="absolute right-0 mt-2 w-52 z-50 overflow-hidden"
+                style={{ border: '1px solid var(--hairline)', borderRadius: 'var(--radius-md)', background: 'var(--surface)' }}
+              >
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--hairline)', background: 'var(--paper)' }}>
+                  <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.username}</p>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--graphite)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
+                </div>
+                <div style={{ padding: '6px' }}>
+                  {(user.role === 'admin' || user.role === 'moderator') && (
+                    <Link
+                      href="/moderation"
+                      onClick={() => setShowProfileDropdown(false)}
+                      className="flex items-center gap-2"
+                      style={{ padding: '8px 10px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--coral-dot)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: 8 }}
+                    >
+                      <i className="bi bi-shield-check" /> Admin
+                    </Link>
+                  )}
+                  <Link
+                    href="/profile"
+                    onClick={() => setShowProfileDropdown(false)}
+                    style={{ padding: '8px 10px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--ink)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: 8 }}
+                  >
+                    <i className="bi bi-person" /> My Profile
+                  </Link>
+                  <Link
+                    href="/profile"
+                    onClick={() => setShowProfileDropdown(false)}
+                    style={{ padding: '8px 10px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--ink)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: 8 }}
+                  >
+                    <i className="bi bi-gear" /> Settings
+                  </Link>
+                </div>
+                <div style={{ padding: '6px', borderTop: '1px solid var(--hairline)' }}>
+                  <button
+                    onClick={logout}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--coral-dot)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, borderRadius: 'var(--radius-sm)' }}
+                  >
+                    <i className="bi bi-box-arrow-right" /> Sign out
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <Link href="/login" className="btn-primary" style={{ fontSize: '0.8rem' }}>Sign in</Link>
+        )}
       </div>
     </header>
   );

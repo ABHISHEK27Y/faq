@@ -2,120 +2,207 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useCountUp } from '@/hooks/useCountUp';
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+/* ── Stat card with count-up ── */
+function StatCard({ label, value, featured = false }: { label: string; value: number; featured?: boolean }) {
+  const count = useCountUp(value);
+  return (
+    <div className={`metric-cell${featured ? ' featured' : ''}`}>
+      <div className="metric-number">{count.toLocaleString()}</div>
+      <div className="metric-label">{label}</div>
+    </div>
+  );
+}
+
+/* ── Mini bar chart (pure CSS) ── */
+const DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
+function MiniBarChart({ faqs }: { faqs: any[] }) {
+  const data = DAYS.map((label, i) => ({ label, value: faqs[i]?.viewCount ?? 0 }));
+  const max = Math.max(...data.map(d => d.value), 1);
+  return (
+    <div className="bar-chart-wrap">
+      <div className="bar-chart">
+        {data.map(({ label, value }) => (
+          <div key={label} className="bar-col">
+            <div className="bar-fill" style={{ height: `${Math.round((value / max) * 60)}px` }} />
+            <span className="bar-label">{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Dot colors cycling ── */
+const DOT_COLORS = ['var(--clay)', 'var(--sage)', 'var(--coral-dot)', 'var(--clay)', 'var(--sage)'];
 
 export default function Home() {
   const [faqs, setFaqs] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any>({ totalFaqs: 0, totalQuestions: 0, mostViewed: [] });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [faqRes, catRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/faqs'),
-          axios.get('http://localhost:5000/api/faqs/categories')
-        ]);
-        setFaqs(faqRes.data.faqs ? faqRes.data.faqs : (faqRes.data.data || faqRes.data));
-        setCategories(catRes.data.data || catRes.data);
-      } catch (err) {}
-    };
-    fetchData();
+    Promise.all([
+      axios.get(`${API}/api/faqs`),
+      axios.get(`${API}/api/faqs/categories`),
+      axios.get(`${API}/api/analytics/dashboard`),
+    ])
+      .then(([faqRes, catRes, analyticsRes]) => {
+        setFaqs(faqRes.data.faqs ?? []);
+        setCategories(catRes.data ?? []);
+        setAnalytics(analyticsRes.data ?? {});
+      })
+      .catch(console.error);
   }, []);
 
+  const totalViews = faqs.reduce((s, f) => s + (f.viewCount ?? 0), 0);
+  const maxViews   = Math.max(...faqs.map(f => f.viewCount ?? 0), 1);
+
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  }).toUpperCase();
+
   return (
-    <>
-      <section className="hero-panel mb-8">
-        <div className="max-w-3xl">
-          <p className="eyebrow mb-3">Knowledge dashboard</p>
-          <h1 className="page-title mb-4">Community Powered Knowledge Base</h1>
-          <p className="mb-6 max-w-2xl text-base text-slate-600">Find answers, contribute knowledge, and help others.</p>
-          <form method="get" action="/faqs" className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-              <input className="search-input" name="q" type="search" aria-label="Search FAQs" placeholder="Search FAQs, topics, policies..." />
-            </div>
-            <Link href="/qa/ask" className="btn-primary">Ask Question</Link>
-          </form>
-        </div>
-      </section>
+    <div className="dash-canvas">
 
-      <section className="mb-8">
-        <div className="section-header">
-          <div>
-            <h2 className="section-title">Popular Categories</h2>
-            <p className="text-sm text-slate-500">Browse high-signal topics by department.</p>
-          </div>
-          <Link href="/faqs" className="btn-ghost">View all</Link>
+      {/* ── Page header ── */}
+      <div className="page-header">
+        <div>
+          <p className="eyebrow" style={{ marginBottom: 6 }}>{today}</p>
+          <h1 className="page-title">Knowledge Base</h1>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {categories.map(cat => {
-            return (
-              <Link key={cat.slug} href={`/category/${cat.slug}`} className="card-modern p-5">
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="grid h-11 w-11 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
-                    <i className="bi bi-folder2-open text-xl"></i>
-                  </span>
-                  <i className="bi bi-arrow-up-right text-slate-300"></i>
-                </div>
-                <h3 className="font800 text-slate-950">{cat.name}</h3>
-                <p className="mt-1 line-clamp-2 text-sm text-slate-500">{cat.description || "Community answers and FAQs."}</p>
-                <p className="mt-4 text-xs font700 text-slate-400">{cat.questionCount || 0} questions</p>
-              </Link>
-            );
-          })}
-          {categories.length === 0 && (
-             <div className="text-sm text-slate-500 col-span-full">Loading categories...</div>
-          )}
+        <div className="page-header-actions">
+          <Link href="/faqs" className="btn-ghost">
+            <i className="bi bi-search" /> Browse
+          </Link>
+          <Link href="/qa/ask" className="btn-primary">
+            <i className="bi bi-plus" /> Ask Question
+          </Link>
         </div>
-      </section>
+      </div>
 
-      <div className="grid gap-8 xl:grid-cols-[1.25fr_0.75fr]">
-        <section>
-          <div className="section-header">
-            <div>
-              <h2 className="section-title">Trending Questions</h2>
-              <p className="text-sm text-slate-500">Popular FAQs ranked by views and helpful votes.</p>
-            </div>
+      {/* ── Metrics row ── */}
+      <div className="metrics-row">
+        <StatCard label="Published FAQs"      value={analytics.totalFaqs     ?? 0} featured />
+        <StatCard label="Community Questions" value={analytics.totalQuestions ?? 0} />
+        <StatCard label="Categories"          value={categories.length} />
+        <StatCard label="Total Views"         value={totalViews} />
+      </div>
+
+      {/* ── Two-column content grid ── */}
+      <div className="content-grid">
+
+        {/* Left — FAQ table */}
+        <div className="panel">
+          <div className="panel-header">
+            <span className="panel-title">Trending FAQs</span>
+            <Link
+              href="/faqs"
+              className="btn-ghost"
+              style={{ fontSize: '0.72rem', padding: '3px 10px', minHeight: 'auto' }}
+            >
+              View all
+            </Link>
           </div>
-          <div className="space-y-4">
-            {faqs.slice(0, 5).map(faq => (
-              <Link key={faq.slug} href={`/faqs/${faq.slug}`} className="card-modern block p-5">
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className="badge-soft">{faq.category?.name || "General"}</span>
-                  {faq.tags && faq.tags.slice(0, 2).map((tag: string) => <span key={tag} className="tag-pill">{tag}</span>)}
+          <div className="data-table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Views</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {faqs.map(faq => (
+                  <tr key={faq._id}>
+                    <td style={{ maxWidth: 220 }}>
+                      <Link
+                        href={`/faqs/${faq.slug}`}
+                        style={{ fontWeight: 500, color: 'var(--ink)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      >
+                        {faq.title}
+                      </Link>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--graphite)' }}>
+                        {faq.category?.name ?? '—'}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div className="progress-bar-wrap">
+                          <div
+                            className="progress-bar-fill"
+                            style={{ width: `${Math.round(((faq.viewCount ?? 0) / maxViews) * 100)}%` }}
+                          />
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--graphite)', fontFamily: 'var(--font-mono)' }}>
+                          {faq.viewCount ?? 0}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`status-pill ${faq.status ?? 'draft'}`}>
+                        {faq.status ?? 'draft'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {faqs.length === 0 && (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', color: 'var(--graphite)', padding: '2rem', fontSize: '0.875rem' }}>
+                      No FAQs yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Right — Activity + Bar chart */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
+
+          {/* Most viewed activity feed */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">Most Viewed</span>
+            </div>
+            {analytics.mostViewed?.length > 0 ? (
+              analytics.mostViewed.slice(0, 5).map((item: any, i: number) => (
+                <div key={item._id} className="activity-item">
+                  <div className="activity-dot" style={{ background: DOT_COLORS[i % DOT_COLORS.length] }} />
+                  <div style={{ minWidth: 0 }}>
+                    <Link href={`/faqs/${item.slug}`} className="activity-lead" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                      {item.title}
+                    </Link>
+                    <div className="activity-time">{(item.viewCount ?? 0).toLocaleString()} views</div>
+                  </div>
                 </div>
-                <h3 className="text-lg font800 text-slate-950">{faq.title}</h3>
-                <p className="mt-2 line-clamp-2 text-sm text-slate-500">{faq.question?.substring(0, 100)}</p>
-                <div className="mt-5 flex flex-wrap gap-4 text-sm text-slate-500">
-                  <span><i className="bi bi-eye"></i> {faq.viewCount} views</span>
-                  <span><i className="bi bi-hand-thumbs-up"></i> {faq.upvoteCount} score</span>
-                </div>
-              </Link>
-            ))}
-            {faqs.length === 0 && (
-              <div className="card-modern p-6 text-sm text-slate-500">No FAQs yet. Start by adding one.</div>
+              ))
+            ) : (
+              <p style={{ padding: '1.25rem 20px', fontSize: '0.85rem', color: 'var(--graphite)' }}>
+                No data yet.
+              </p>
             )}
           </div>
-        </section>
 
-        <aside className="space-y-8">
-          <section>
-            <div className="section-header">
-              <div>
-                <h2 className="section-title">Recent Questions</h2>
-                <p className="text-sm text-slate-500">Freshly published knowledge.</p>
-              </div>
+          {/* View distribution bar chart */}
+          <div className="panel">
+            <div className="panel-header">
+              <span className="panel-title">View Distribution</span>
             </div>
-            <div className="card-modern divide-y divide-slate-100">
-              {faqs.slice(0, 5).map(faq => (
-                <Link key={`recent-${faq.slug}`} href={`/faqs/${faq.slug}`} className="block p-4 transition hover:bg-slate-50">
-                  <p className="font700 text-slate-900">{faq.title}</p>
-                  <p className="mt-1 text-xs text-slate-500">{faq.category?.name || "General"}</p>
-                </Link>
-              ))}
-            </div>
-          </section>
-        </aside>
+            <MiniBarChart faqs={faqs} />
+          </div>
+
+        </div>
       </div>
-    </>
+    </div>
   );
 }
