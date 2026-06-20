@@ -90,9 +90,10 @@ export default function ModerationPage() {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       showToast(res.data.message, 'success');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      showToast('Failed to start backfill.', 'error');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to start backfill.';
+      showToast(`Error: ${errorMessage}`, 'error');
     }
   };
 

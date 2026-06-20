@@ -232,7 +232,13 @@ const reviewSuggestion = async (req, res) => {
 
 const backfillEmbeddings = async (req, res) => {
   try {
-    const faqs = await FAQ.find({ status: 'published', embedding: { $size: 0 } });
+    const faqs = await FAQ.find({ 
+      status: 'published', 
+      $or: [
+        { embedding: { $exists: false } },
+        { embedding: { $size: 0 } }
+      ]
+    });
     if (faqs.length === 0) {
       return res.json({ message: 'All published FAQs already have embeddings.' });
     }

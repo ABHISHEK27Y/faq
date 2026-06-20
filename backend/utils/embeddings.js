@@ -4,7 +4,7 @@ async function generateEmbedding(text) {
   if (!text) return [];
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
-    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const model = genAI.getGenerativeModel({ model: "gemini-embedding-2" });
     const result = await model.embedContent(text);
     return result.embedding.values;
   } catch (error) {

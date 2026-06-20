@@ -6,14 +6,28 @@ A next-generation, AI-powered knowledge base and community Q&A portal. Built on 
 
 ## 🔥 Flagship Capabilities
 
-Six flagship capabilities define this platform:
+Seven flagship capabilities define this platform:
 
-- **Twitter/Reddit-Style Community Architecture** — A dynamic, scrolling feed of community questions. Users can post answers and drop nested comments mimicking a highly interactive social media thread. Includes personal bookmarks and robust search capabilities.
-- **AI-Powered Ecosystem & Moderation** — "Yaksha", a custom-built Gen-Z/Hinglish AI assistant, is integrated directly into the application to help users find answers instantly. Additionally, an invisible AI moderation layer intercepts and screens newly created questions and answers for toxicity in real-time, instantly rejecting bad actors.
+- **Semantic Vector Search (Intent Engine)** — Traditional keyword search is dead. Our platform integrates directly with Gemini `text-embedding-004` to convert FAQs into 768-dimensional mathematical vectors. When a user searches for an abstract concept, our custom In-Memory Cosine Similarity algorithm calculates intent and returns the best semantic match.
+- **Deep Auto-Answer Pipeline (Yaksha Bot)** — A fully autonomous pipeline powered by Retrieval-Augmented Generation (RAG). When users post questions, the system vectorizes their query, retrieves relevant contexts from the FAQ database, and feeds it into `gemini-2.5-flash`. The "✨ Yaksha Bot" then magically posts a contextual, friendly markdown response in real-time.
+- **AI Toxicity Moderation** — An invisible synchronous AI layer intercepts newly created questions and answers, screening them for abusive or highly toxic content in real-time before saving them to the database.
+- **Twitter/Reddit-Style Community Architecture** — A dynamic, scrolling feed of community questions. Users can post answers and drop nested comments mimicking a highly interactive social media thread. Includes personal bookmarks, real-time typing indicators, and robust search capabilities.
 - **Expert Promotion & Reputation Engine** — Users earn reputation points (REP) by contributing. Question authors can pin the definitive "Accepted" solution, permanently rewarding the answerer with a massive +20 REP boost. Protected by idempotency guards to prevent abuse.
 - **Animated Gamification & Leaderboards** — A beautifully animated, real-time leaderboard featuring 3D-styled podiums for the top 3 contributors. It calculates visual progress bars showing the relative reputation gaps between users. Profiles dynamically display hierarchical roles styled as premium badges.
 - **Live Socket Real-Time Interactions** — When a user begins typing an answer, other viewers see a real-time "User is typing..." indicator. Users receive instant, live UI toast notifications when someone comments on their answer or accepts their solution—no page refresh required.
-- **Advanced Admin Telemetry & Moderation Queue** — A secure dashboard where moderators review user-submitted FAQs via an expandable inline table (read the full context and click "Approve"/"Reject" without navigating away). Actions trigger polished, floating toast notifications.
+- **Advanced Admin Telemetry & Moderation Queue** — A secure dashboard where moderators review user-submitted FAQs via an expandable inline table. Actions trigger polished, floating toast notifications.
+
+---
+
+## 📚 Technical Documentation
+
+Curious how these features actually work under the hood? Check out our detailed architectural write-ups in the `/docs` folder:
+
+- [Semantic Vector Search Architecture](./docs/semantic-search.md)
+- [Deep Auto-Answer Pipeline (Yaksha Bot)](./docs/auto-answer-pipeline.md)
+- [Community Q&A Ecosystem](./docs/community-qa.md)
+- [Real-Time WebSockets & Notifications](./docs/realtime-notifications.md)
+- [Synchronous AI Toxicity Screening](./docs/toxicity-screening.md)
 
 ---
 

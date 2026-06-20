@@ -10,7 +10,7 @@ router.route('/mine').get(protect, getMyFAQs);
 router.route('/categories').get(getCategories);
 router.get('/pending', protect, moderator, getPendingFAQs);
 router.get('/suggestions/pending', protect, moderator, getPendingSuggestions);
-router.post('/backfill-embeddings', protect, admin, backfillEmbeddings);
+router.post('/backfill-embeddings', protect, moderator, backfillEmbeddings);
 router.route('/suggestions/:suggestionId/review').put(protect, moderator, reviewSuggestion);
 router.route('/:slug').get(getFAQBySlug);
 router.route('/:id/status').put(protect, moderator, updateFAQStatus);
