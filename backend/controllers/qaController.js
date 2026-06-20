@@ -1,6 +1,8 @@
 const { Question, Answer, Comment } = require('../models/QA');
 const { createNotification } = require('./notificationController');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { FAQ } = require('../models/FAQ');
+const { generateEmbedding, cosineSimilarity } = require('../utils/embeddings');
 
 const checkModeration = async (text) => {
   try {
@@ -13,6 +15,58 @@ const checkModeration = async (text) => {
   } catch (err) {
     console.error("Moderation AI Error:", err.message);
     return false; // allow by default if AI fails
+  }
+};
+
+const autoAnswerQuestion = async (questionId, title, body, authorId, io) => {
+  try {
+    const queryEmbedding = await generateEmbedding(`${title}\n${body}`);
+    if (!queryEmbedding || queryEmbedding.length === 0) return;
+
+    const faqs = await FAQ.find({ status: 'published' });
+    const scoredFaqs = faqs.map(faq => {
+      let score = 0;
+      if (faq.embedding && faq.embedding.length > 0) {
+        score = cosineSimilarity(queryEmbedding, faq.embedding);
+      }
+      return { faq, score };
+    }).filter(item => item.score > 0.65).sort((a, b) => b.score - a.score).slice(0, 3);
+
+    if (scoredFaqs.length === 0) return;
+
+    const context = scoredFaqs.map(item => `Q: ${item.faq.title}\nA: ${item.faq.answer}`).join("\n\n");
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `You are 'Yaksha', an ultra-fast AI assistant for VLED. A user just asked a question in the community hub.
+Answer their question in a helpful, friendly, and slightly Gen-Z/Hinglish tone.
+You MUST base your answer strictly on the following FAQ knowledge base context. If the context doesn't fully answer the question, say so politely.
+
+FAQ CONTEXT:
+${context}
+
+USER'S QUESTION:
+Title: ${title}
+Body: ${body}
+
+Write your answer in Markdown format. Keep it concise but fully answer the question.`;
+    
+    const result = await model.generateContent(prompt);
+    const answerText = result.response.text();
+
+    const answer = new Answer({ body: answerText, question: questionId, isAI: true });
+    await answer.save();
+
+    await createNotification(
+      authorId,
+      'answer',
+      `✨ Yaksha Auto-Answered your question "${title.substring(0, 30)}..."`,
+      `/qa/${questionId}`
+    );
+    if (io) io.to(`user_${authorId}`).emit('new_notification');
+    
+  } catch (err) {
+    console.error("Auto-Answer Pipeline Error:", err.message);
   }
 };
 
@@ -83,6 +137,10 @@ const createQuestion = async (req, res) => {
 
     const question = new Question({ title, body, category, tags, author: req.user._id });
     const createdQuestion = await question.save();
+    
+    // Kick off auto-answer pipeline asynchronously
+    autoAnswerQuestion(createdQuestion._id, title, body, req.user._id, req.io);
+
     res.status(201).json(createdQuestion);
   } catch (error) { res.status(400).json({ message: error.message }); }
 };

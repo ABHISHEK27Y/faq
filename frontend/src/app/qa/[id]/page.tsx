@@ -285,20 +285,39 @@ export default function QaThreadPage(props: { params: Promise<{ id: string }> })
 
             <div className="space-y-6">
               {answers.map((ans: any) => (
-                <article key={ans._id} className={`bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.03)] border ${ans.isAccepted ? 'border-emerald-500 ring-2 ring-emerald-50' : 'border-slate-100'}`}>
+                <article key={ans._id} className={`bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.03)] border ${ans.isAccepted ? 'border-emerald-500 ring-2 ring-emerald-50' : ans.isAI ? 'border-indigo-400 ring-2 ring-indigo-50 shadow-indigo-100' : 'border-slate-100'}`}>
                   {ans.isAccepted && (
                     <div className="bg-gradient-to-r from-emerald-400 to-emerald-600 px-5 py-2 text-white font-bold text-xs flex items-center gap-2 shadow-inner">
                       <i className="bi bi-check-circle-fill text-sm"></i> Accepted by Author
                     </div>
                   )}
-                  <div className={`p-5 sm:p-6 ${ans.isAccepted ? 'bg-emerald-50/30' : 'bg-white'}`}>
+                  {ans.isAI && !ans.isAccepted && (
+                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2 text-white font-bold text-xs flex items-center gap-2 shadow-inner">
+                      <i className="bi bi-robot text-sm"></i> AI Auto-Answer
+                    </div>
+                  )}
+                  <div className={`p-5 sm:p-6 ${ans.isAccepted ? 'bg-emerald-50/30' : ans.isAI ? 'bg-indigo-50/20' : 'bg-white'}`}>
                     <div className="flex justify-between items-start mb-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 text-white flex items-center justify-center font-bold text-lg shadow-sm">{ans.author?.username?.[0]?.toUpperCase() || 'A'}</div>
-                        <div>
-                          <div className="font-bold text-slate-900 text-sm">{ans.author?.username || 'Anonymous'}</div>
-                          <div className="text-[11px] font-semibold text-slate-400">{new Date(ans.createdAt).toLocaleDateString()}</div>
-                        </div>
+                        {ans.isAI ? (
+                          <>
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-indigo-500/30">✨</div>
+                            <div>
+                              <div className="font-black text-indigo-700 flex items-center gap-1.5">
+                                Yaksha Bot <i className="bi bi-patch-check-fill text-indigo-500 text-xs"></i>
+                              </div>
+                              <div className="text-[11px] font-semibold text-slate-400">{new Date(ans.createdAt).toLocaleDateString()}</div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 text-white flex items-center justify-center font-bold text-lg shadow-sm">{ans.author?.username?.[0]?.toUpperCase() || 'A'}</div>
+                            <div>
+                              <div className="font-bold text-slate-900 text-sm">{ans.author?.username || 'Anonymous'}</div>
+                              <div className="text-[11px] font-semibold text-slate-400">{new Date(ans.createdAt).toLocaleDateString()}</div>
+                            </div>
+                          </>
+                        )}
                       </div>
                       <div className="flex gap-2 items-center">
                         {!ans.isAccepted && user?._id === data.question.author?._id && (

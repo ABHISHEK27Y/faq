@@ -20,7 +20,8 @@ questionSchema.virtual('score').get(function() { return this.upvoteCount - this.
 
 const answerSchema = new mongoose.Schema({
   question: { type: mongoose.Schema.Types.ObjectId, ref: 'Question', required: true },
-  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: function() { return !this.isAI; } },
+  isAI: { type: Boolean, default: false },
   body: { type: String, required: true },
   isAccepted: { type: Boolean, default: false },
   upvoteCount: { type: Number, default: 0 },

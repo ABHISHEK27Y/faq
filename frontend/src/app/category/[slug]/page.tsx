@@ -10,7 +10,6 @@ export default function CategoryPage(props: { params: Promise<{ slug: string }> 
   const [faqs, setFaqs] = useState<any[]>([]);
   const [category, setCategory] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchCategoryFaqs = async () => {
@@ -44,11 +43,6 @@ export default function CategoryPage(props: { params: Promise<{ slug: string }> 
     });
   };
 
-  const filteredFaqs = faqs.filter(faq => 
-    faq.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (faq.answer && faq.answer.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
   return (
     <div className="max-w-[56rem] mx-auto w-full pt-8 px-4 pb-20">
       
@@ -71,13 +65,13 @@ export default function CategoryPage(props: { params: Promise<{ slug: string }> 
       <div className="flex flex-col gap-4 w-full">
         {loading ? (
           <div className="text-center p-12 bg-white border border-slate-200 rounded-2xl animate-pulse text-slate-500 font-medium w-full">Loading FAQs...</div>
-        ) : filteredFaqs.length === 0 ? (
+        ) : faqs.length === 0 ? (
           <div className="text-center p-16 bg-white rounded-2xl border-dashed border-2 border-slate-200 w-full">
-            <i className="bi bi-search text-5xl mb-4 text-slate-300 block"></i>
-            <p className="text-lg font-medium text-slate-600">No FAQs found matching your criteria.</p>
+            <i className="bi bi-folder-x text-5xl mb-4 text-slate-300 block"></i>
+            <p className="text-lg font-medium text-slate-600">No FAQs found in this category.</p>
           </div>
         ) : (
-          filteredFaqs.map((faq, idx) => (
+          faqs.map((faq, idx) => (
             <details key={faq._id} id={`q-${faq._id}`} className="faq-q group bg-white border border-slate-200 rounded-2xl overflow-hidden [&_summary::-webkit-details-marker]:hidden w-full">
               <summary className="cursor-pointer px-6 py-5 flex gap-4 items-center select-none hover:bg-slate-50/50">
                 <span className="font-extrabold text-indigo-600 text-base">{idx + 1}.</span>

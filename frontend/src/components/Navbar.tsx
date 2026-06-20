@@ -61,7 +61,7 @@ export default function Navbar() {
         
         <form className="relative max-w-xl flex-1" action="/faqs">
           <i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <input className="search-input" type="search" name="keyword" placeholder="Search the FAQ — type a keyword (e.g. NOC, hostel, stipend)" id="global-search" />
+          <input className="search-input" type="search" name="q" placeholder="Search the FAQ — type a keyword (e.g. NOC, hostel, stipend)" id="global-search" />
         </form>
         
         <div className="relative">
