@@ -256,7 +256,8 @@ const backfillEmbeddings = async (req, res) => {
       status: 'published', 
       $or: [
         { embedding: { $exists: false } },
-        { embedding: { $size: 0 } }
+        { embedding: { $size: 0 } },
+        { embedding: { $not: { $size: 768 } } }
       ]
     });
     if (faqs.length === 0) {

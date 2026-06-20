@@ -4,8 +4,11 @@ async function generateEmbedding(text) {
   if (!text) return [];
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
-    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
-    const result = await model.embedContent(text);
+    const model = genAI.getGenerativeModel({ model: "gemini-embedding-2" });
+    const result = await model.embedContent({
+      content: { parts: [{ text }] },
+      outputDimensionality: 768
+    });
     return result.embedding.values;
   } catch (error) {
     console.error("Embedding Generation Error:", error.message);
