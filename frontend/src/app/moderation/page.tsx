@@ -83,14 +83,35 @@ export default function ModerationPage() {
     }
   };
 
+  const handleBackfillEmbeddings = async () => {
+    try {
+      showToast('Starting background backfill for embeddings...', 'success');
+      const res = await axios.post(`http://localhost:5000/api/faqs/backfill-embeddings`, {}, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+      showToast(res.data.message, 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to start backfill.', 'error');
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="mb-8">
-        <h1 className="page-title text-rose-600 flex items-center gap-2">
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-          Admin Dashboard
-        </h1>
-        <p className="text-slate-500 mt-2">Approve user-submitted FAQs and manage reported content.</p>
+      <div className="mb-8 flex justify-between items-end">
+        <div>
+          <h1 className="page-title text-rose-600 flex items-center gap-2">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            Admin Dashboard
+          </h1>
+          <p className="text-slate-500 mt-2">Approve user-submitted FAQs and manage reported content.</p>
+        </div>
+        <div className="flex gap-4">
+          <button onClick={handleBackfillEmbeddings} className="btn-secondary !rounded-2xl flex items-center gap-2">
+            <i className="bi bi-robot"></i>
+            Backfill Embeddings
+          </button>
+        </div>
       </div>
 
       {/* Pending FAQs Section */}

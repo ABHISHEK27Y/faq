@@ -1,5 +1,6 @@
 const { FAQ, Category } = require('../models/FAQ');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { generateEmbedding, cosineSimilarity } = require('../utils/embeddings');
 
 const getPendingFAQs = async (req, res) => {
   try {
@@ -38,42 +39,52 @@ const getFAQs = async (req, res) => {
     const pageSize = Number(req.query.limit) || 10;
     const page = Number(req.query.page) || 1;
 
-    let queryCondition = {};
-    if (req.query.keyword) {
-      let searchTerms = req.query.keyword;
-      try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        const prompt = `Extract the 3 most critical formal intent keywords from this student search query: "${req.query.keyword}". Return ONLY the keywords separated by spaces. Do not include any other text.`;
-        const result = await model.generateContent(prompt);
-        const intent = result.response.text().trim();
-        if (intent && !intent.toLowerCase().includes('error')) {
-          // Create an OR regex pattern combining original query and AI extracted keywords
-          searchTerms = `${req.query.keyword} ${intent}`.split(/\s+/).join('|');
-        }
-      } catch(err) {
-        console.error("Gemini RAG Error:", err.message);
-      }
-      queryCondition = { title: { $regex: searchTerms, $options: 'i' } };
-    }
-    
     let categoryFilter = {};
     if (req.query.categorySlug) {
       const category = await Category.findOne({ slug: req.query.categorySlug });
       if (category) {
         categoryFilter = { category: category._id };
       } else {
-        return res.json({ faqs: [], page: 1, pages: 1 }); // return empty if category not found
+        return res.json({ faqs: [], page: 1, pages: 1 });
       }
     }
 
-    const count = await FAQ.countDocuments({ ...queryCondition, ...categoryFilter, status: 'published' });
-    const faqs = await FAQ.find({ ...queryCondition, ...categoryFilter, status: 'published' })
+    if (req.query.keyword) {
+      // SEMANTIC VECTOR SEARCH
+      const queryEmbedding = await generateEmbedding(req.query.keyword);
+      
+      // Fetch all published FAQs (matching category if provided)
+      const allFaqs = await FAQ.find({ ...categoryFilter, status: 'published' })
+        .populate('category', 'name slug')
+        .populate('author', 'username');
+
+      // Calculate cosine similarity for each FAQ
+      const scoredFaqs = allFaqs.map(faq => {
+        const similarity = cosineSimilarity(queryEmbedding, faq.embedding);
+        return { faq, similarity };
+      });
+
+      // Filter out low relevance and sort by descending similarity
+      const threshold = 0.5; // Arbitrary threshold
+      scoredFaqs.sort((a, b) => b.similarity - a.similarity);
+      
+      // We can apply a threshold, but for now we'll just sort to ensure the best matches are first
+      const sortedFaqs = scoredFaqs.map(sf => sf.faq);
+
+      const count = sortedFaqs.length;
+      const paginatedFaqs = sortedFaqs.slice(pageSize * (page - 1), pageSize * page);
+
+      return res.json({ faqs: paginatedFaqs, page, pages: Math.ceil(count / pageSize) });
+    }
+
+    // Standard fallback when no keyword is provided
+    const count = await FAQ.countDocuments({ ...categoryFilter, status: 'published' });
+    const faqs = await FAQ.find({ ...categoryFilter, status: 'published' })
       .populate('category', 'name slug')
       .populate('author', 'username')
       .limit(pageSize)
       .skip(pageSize * (page - 1))
-      .sort('-createdAt'); // Ensure consistent ordering
+      .sort('-createdAt');
 
     res.json({ faqs, page, pages: Math.ceil(count / pageSize) });
   } catch (error) { res.status(500).json({ message: error.message }); }
@@ -116,7 +127,11 @@ const createFAQ = async (req, res) => {
       console.error("Gemini Moderation Error:", err.message);
     }
 
-    const faq = new FAQ({ title, slug, question, answer, category, author: req.user._id });
+    // Generate Embedding
+    const embeddingText = `${title}\n${question}\n${answer}`;
+    const embedding = await generateEmbedding(embeddingText);
+
+    const faq = new FAQ({ title, slug, question, answer, category, author: req.user._id, embedding });
     const createdFAQ = await faq.save();
     res.status(201).json(createdFAQ);
   } catch (error) { res.status(400).json({ message: error.message }); }
@@ -194,6 +209,11 @@ const reviewSuggestion = async (req, res) => {
       faq.title = suggestion.proposedTitle;
       faq.answer = suggestion.proposedAnswer;
       faq.status = 'published'; // ensure it stays published
+      
+      // Update Embedding
+      const embeddingText = `${faq.title}\n${faq.question}\n${faq.answer}`;
+      faq.embedding = await generateEmbedding(embeddingText);
+      
       await faq.save();
       
       const { createNotification } = require('./notificationController');
@@ -210,6 +230,35 @@ const reviewSuggestion = async (req, res) => {
   } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
+const backfillEmbeddings = async (req, res) => {
+  try {
+    const faqs = await FAQ.find({ status: 'published', embedding: { $size: 0 } });
+    if (faqs.length === 0) {
+      return res.json({ message: 'All published FAQs already have embeddings.' });
+    }
+
+    res.json({ message: `Started background backfill for ${faqs.length} FAQs.` });
+
+    // Run in background to avoid blocking and handle rate limits
+    setTimeout(async () => {
+      for (const faq of faqs) {
+        try {
+          const embeddingText = `${faq.title}\n${faq.question}\n${faq.answer}`;
+          faq.embedding = await generateEmbedding(embeddingText);
+          await faq.save();
+          console.log(`✅ Backfilled embedding for FAQ: ${faq.title}`);
+          // Basic delay to avoid hitting Gemini rate limits (e.g., 2 seconds)
+          await new Promise(r => setTimeout(r, 2000));
+        } catch (err) {
+          console.error(`❌ Failed to backfill FAQ: ${faq.title}`, err.message);
+        }
+      }
+      console.log('🎉 Background embedding backfill complete!');
+    }, 0);
+
+  } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
 module.exports = { 
   getCategories, 
   getFAQs, 
@@ -221,5 +270,6 @@ module.exports = {
   voteFAQ,
   suggestEdit,
   getPendingSuggestions,
-  reviewSuggestion
+  reviewSuggestion,
+  backfillEmbeddings
 };

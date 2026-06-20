@@ -24,6 +24,7 @@ const faqSchema = new mongoose.Schema({
   downvoteCount: { type: Number, default: 0 },
   version: { type: Number, default: 1 },
   publishedAt: { type: Date, default: null },
+  embedding: { type: [Number], default: [] },
 }, { timestamps: true });
 
 faqSchema.virtual('score').get(function() {
