@@ -171,14 +171,24 @@ export default function Navbar() {
                 </div>
                 <div style={{ padding: '6px' }}>
                   {(user.role === 'admin' || user.role === 'moderator') && (
-                    <Link
-                      href="/moderation"
-                      onClick={() => setShowProfileDropdown(false)}
-                      className="flex items-center gap-2"
-                      style={{ padding: '8px 10px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--coral-dot)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: 8 }}
-                    >
-                      <i className="bi bi-shield-check" /> Admin
-                    </Link>
+                    <>
+                      <Link
+                        href="/moderation"
+                        onClick={() => setShowProfileDropdown(false)}
+                        className="flex items-center gap-2"
+                        style={{ padding: '8px 10px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--coral-dot)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: 8 }}
+                      >
+                        <i className="bi bi-shield-check" /> Admin
+                      </Link>
+                      <Link
+                        href="/analytics"
+                        onClick={() => setShowProfileDropdown(false)}
+                        className="flex items-center gap-2"
+                        style={{ padding: '8px 10px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--coral-dot)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: 8 }}
+                      >
+                        <i className="bi bi-graph-up" /> Analytics
+                      </Link>
+                    </>
                   )}
                   <Link
                     href="/profile"

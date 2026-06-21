@@ -10,6 +10,7 @@ export default function ModerationPage() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
+  const [expandedSuggestionId, setExpandedSuggestionId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{message: string, type: 'success'|'error'} | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -19,6 +20,9 @@ export default function ModerationPage() {
 
   const toggleExpand = (id: string) => {
     setExpandedFaqId(prev => prev === id ? null : id);
+  };
+  const toggleSuggestionExpand = (id: string) => {
+    setExpandedSuggestionId(prev => prev === id ? null : id);
   };
   const { user } = useAuth();
 
@@ -190,19 +194,43 @@ export default function ModerationPage() {
               ) : suggestions.length === 0 ? (
                 <tr><td colSpan={4} className="text-center py-6 text-slate-500 font-medium">No pending edit suggestions.</td></tr>
               ) : suggestions.map(suggestion => (
-                <tr key={suggestion._id} className="border-b border-white/20 hover:bg-white/40 transition-colors">
-                  <td className="py-4 px-6 text-slate-500 text-sm font-medium">
-                    <Link href={`/faqs/${suggestion.faq?.slug}`} className="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">
-                      {suggestion.faq?.title?.substring(0, 30)}...
-                    </Link>
-                  </td>
-                  <td className="py-4 px-6 font-bold text-slate-900">{suggestion.proposedTitle}</td>
-                  <td className="py-4 px-6 text-slate-500 font-medium">@{suggestion.suggestedBy?.username || 'Unknown'}</td>
-                  <td className="py-4 px-6 text-right flex gap-3 justify-end">
-                    <button onClick={() => handleReviewSuggestion(suggestion._id, 'approved')} className="bg-white border border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 font-bold text-sm py-2 px-4 rounded-xl shadow-sm transition-all">Approve</button>
-                    <button onClick={() => handleReviewSuggestion(suggestion._id, 'rejected')} className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 font-bold text-sm py-2 px-4 rounded-xl shadow-sm transition-all">Reject</button>
-                  </td>
-                </tr>
+                <React.Fragment key={suggestion._id}>
+                  <tr className={`border-b border-white/20 transition-colors ${expandedSuggestionId === suggestion._id ? 'bg-white/60' : 'hover:bg-white/40'}`}>
+                    <td className="py-4 px-6 text-slate-500 text-sm font-medium">
+                      <Link href={`/faqs/${suggestion.faq?.slug}`} className="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">
+                        {suggestion.faq?.title?.substring(0, 30)}...
+                      </Link>
+                    </td>
+                    <td className="py-4 px-6 font-bold text-slate-900">
+                      <button onClick={() => toggleSuggestionExpand(suggestion._id)} className="hover:text-indigo-600 transition-colors flex items-center gap-2 text-left">
+                        <i className={`bi bi-chevron-${expandedSuggestionId === suggestion._id ? 'up' : 'down'} text-xs text-slate-400`}></i>
+                        {suggestion.proposedTitle}
+                      </button>
+                    </td>
+                    <td className="py-4 px-6 text-slate-500 font-medium">@{suggestion.suggestedBy?.username || 'Unknown'}</td>
+                    <td className="py-4 px-6 text-right flex gap-3 justify-end">
+                      <button onClick={() => toggleSuggestionExpand(suggestion._id)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 font-bold text-sm py-2 px-4 rounded-xl shadow-sm transition-all">Review</button>
+                      <button onClick={() => handleReviewSuggestion(suggestion._id, 'approved')} className="bg-white border border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 font-bold text-sm py-2 px-4 rounded-xl shadow-sm transition-all">Approve</button>
+                      <button onClick={() => handleReviewSuggestion(suggestion._id, 'rejected')} className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 font-bold text-sm py-2 px-4 rounded-xl shadow-sm transition-all">Reject</button>
+                    </td>
+                  </tr>
+                  {expandedSuggestionId === suggestion._id && (
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <td colSpan={4} className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Original Answer</h4>
+                            <p className="text-slate-500 bg-white/50 p-4 rounded-xl border border-slate-200 whitespace-pre-wrap">{suggestion.faq?.answer || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-indigo-500 uppercase tracking-wider mb-1">Proposed Answer</h4>
+                            <p className="text-slate-900 bg-white p-4 rounded-xl border border-indigo-200 shadow-sm whitespace-pre-wrap">{suggestion.proposedAnswer}</p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

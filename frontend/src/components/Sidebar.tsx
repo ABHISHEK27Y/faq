@@ -16,6 +16,7 @@ const NAV = [
 
 const ADMIN_NAV = [
   { href: '/moderation', icon: 'bi-shield-check', label: 'Admin' },
+  { href: '/analytics',  icon: 'bi-graph-up',     label: 'Analytics' },
 ];
 
 function isActive(href: string, pathname: string) {
