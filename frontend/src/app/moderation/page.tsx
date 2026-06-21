@@ -120,7 +120,7 @@ export default function ModerationPage() {
       </div>
 
       {/* Pending FAQs Section */}
-      <section className="glass-panel p-6 rounded-3xl border-t-4 border-t-amber-500 animate-slide-up">
+      <section className="bg-white p-6 rounded-3xl border border-slate-200 border-t-4 border-t-amber-500 shadow-sm animate-slide-up">
         <h2 className="text-xl font-bold text-slate-800 mb-6">Pending FAQs ({pendingFaqs.length})</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -176,7 +176,7 @@ export default function ModerationPage() {
       </section>
 
       {/* Review Edit Suggestions Section */}
-      <section className="glass-panel p-6 rounded-3xl border-t-4 border-t-indigo-500 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+      <section className="bg-white p-6 rounded-3xl border border-slate-200 border-t-4 border-t-indigo-500 shadow-sm animate-slide-up" style={{ animationDelay: '0.1s' }}>
         <h2 className="text-xl font-bold text-slate-800 mb-6">Suggested Edits ({suggestions.length})</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -238,7 +238,7 @@ export default function ModerationPage() {
       </section>
 
       {/* Reported Content Section */}
-      <section className="glass-panel p-6 rounded-3xl border-t-4 border-t-rose-500 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+      <section className="bg-white p-6 rounded-3xl border border-slate-200 border-t-4 border-t-rose-500 shadow-sm animate-slide-up" style={{ animationDelay: '0.2s' }}>
         <h2 className="text-xl font-bold text-slate-800 mb-6">Reported Content ({reports.length})</h2>
         {reports.length === 0 ? (
           <div className="text-center py-10 text-slate-500 font-medium">
