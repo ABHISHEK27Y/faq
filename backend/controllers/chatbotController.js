@@ -4,6 +4,9 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+const { generateEmbedding, cosineSimilarity } = require('../utils/embeddings');
+const { FAQ } = require('../models/FAQ');
+
 const generateChatResponse = async (req, res) => {
   try {
     const { message } = req.body;
@@ -15,10 +18,38 @@ const generateChatResponse = async (req, res) => {
     // Sanitize message to prevent prompt injection
     const sanitizedMessage = message.replace(/["]/g, '\\"').replace(/[{}]/g, '');
 
+    // Search FAQ database for context
+    let context = "";
+    try {
+      const queryEmbedding = await generateEmbedding(sanitizedMessage);
+      if (queryEmbedding && queryEmbedding.length > 0) {
+        const faqs = await FAQ.find({ status: 'published' });
+        const scoredFaqs = faqs.map(faq => {
+          let score = 0;
+          if (faq.embedding && faq.embedding.length > 0) {
+            score = cosineSimilarity(queryEmbedding, faq.embedding);
+          }
+          return { faq, score };
+        }).filter(item => item.score > 0.60).sort((a, b) => b.score - a.score).slice(0, 3);
+        
+        if (scoredFaqs.length > 0) {
+          context = scoredFaqs.map(item => `Q: ${item.faq.title}\nA: ${item.faq.answer}`).join("\n\n");
+        }
+      }
+    } catch (err) {
+      console.error("Chatbot Embedding Search Error:", err.message);
+    }
+
     const prompt = `
-      You are Yaksha, an AI assistant for our FAQ platform.
+      You are Yaksha, an AI assistant for the Vicharanashala Internship (samagama.in).
       Analyze the user's language and tone. If the user communicates using Gen-Z slang or Hinglish, respond back in a matching chill, relatable Gen-Z/Hinglish tone.
       Otherwise, if the user communicates in standard or formal language, respond strictly in a professional, clear, and helpful tone.
+      
+      You MUST base your answer strictly on the following FAQ knowledge base context. If the context doesn't fully answer the question, say so politely.
+      
+      FAQ CONTEXT:
+      ${context}
+
       User message: "${sanitizedMessage}"
     `;
 
