@@ -10,6 +10,7 @@ const NAV = [
   { href: '/faqs/submit', icon: 'bi-journal-plus',     label: 'Propose FAQ' },
   { href: '/qa',          icon: 'bi-chat-dots',        label: 'Questions' },
   { href: '/qa/ask',      icon: 'bi-plus-circle',      label: 'Ask' },
+  { href: '/qa/my-questions', icon: 'bi-person-lines-fill', label: 'My Questions' },
   { href: '/bookmarks',   icon: 'bi-bookmark',         label: 'Bookmarks' },
   { href: '/leaderboard', icon: 'bi-trophy',           label: 'Leaderboard' }
 ];
@@ -22,6 +23,7 @@ const ADMIN_NAV = [
 function isActive(href: string, pathname: string) {
   if (href === '/') return pathname === '/';
   if (href === '/qa' && pathname.startsWith('/qa/ask')) return false;
+  if (href === '/qa' && pathname.startsWith('/qa/my-questions')) return false;
   if (href === '/faqs' && pathname.startsWith('/faqs/submit')) return false;
   return pathname === href || pathname.startsWith(href + '/');
 }
