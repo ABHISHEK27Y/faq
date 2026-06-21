@@ -48,33 +48,33 @@ export default function AnalyticsDashboard() {
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="stat-card">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col">
           <div className="mb-3 grid h-10 w-10 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
             <i className="bi bi-question-circle"></i>
           </div>
-          <div className="stat-value">{data.totalFaqs}</div>
-          <div className="stat-label">Published FAQs</div>
+          <div className="text-3xl font-bold font-display text-slate-900">{data.totalFaqs}</div>
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Published FAQs</div>
         </div>
-        <div className="stat-card">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col">
           <div className="mb-3 grid h-10 w-10 place-items-center rounded-lg bg-emerald-50 text-emerald-600">
             <i className="bi bi-chat-dots"></i>
           </div>
-          <div className="stat-value">{data.totalQuestions}</div>
-          <div className="stat-label">Community Questions</div>
+          <div className="text-3xl font-bold font-display text-slate-900">{data.totalQuestions}</div>
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Community Questions</div>
         </div>
-        <div className="stat-card">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col">
           <div className="mb-3 grid h-10 w-10 place-items-center rounded-lg bg-amber-50 text-amber-600">
             <i className="bi bi-search"></i>
           </div>
-          <div className="stat-value">{data.topSearches.length}</div>
-          <div className="stat-label">Search Keywords</div>
+          <div className="text-3xl font-bold font-display text-slate-900">{data.topSearches.length}</div>
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Search Keywords</div>
         </div>
-        <div className="stat-card">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col">
           <div className="mb-3 grid h-10 w-10 place-items-center rounded-lg bg-red-50 text-red-600">
             <i className="bi bi-question"></i>
           </div>
-          <div className="stat-value">{data.unanswered.length}</div>
-          <div className="stat-label">Unanswered</div>
+          <div className="text-3xl font-bold font-display text-slate-900">{data.unanswered.length}</div>
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Unanswered</div>
         </div>
       </div>
 
@@ -156,47 +156,47 @@ export default function AnalyticsDashboard() {
             <h2 className="section-title text-indigo-900">User Role Management</h2>
             <p className="text-slate-500 text-sm mt-1">View all registered users and assign administrative privileges.</p>
           </div>
-          <div className="p-6 bg-slate-50/50">
-            {usersLoading ? (
-              <div className="text-center py-10 text-slate-500 animate-pulse font-medium">Loading users...</div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-10 text-slate-500 bg-white rounded-xl border border-slate-200 shadow-sm">No users found.</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {users.map((u: any) => (
-                  <div key={u._id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-bold text-slate-900 text-lg">@{u.username}</h3>
-                        <p className="text-sm text-slate-500 mt-0.5">{u.email}</p>
-                      </div>
-                      <span className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                        {new Date(u.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    
-                    <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</span>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50/50">
+                <tr className="border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                  <th className="py-4 px-6">Username</th>
+                  <th className="py-4 px-6">Email</th>
+                  <th className="py-4 px-6">Joined</th>
+                  <th className="py-4 px-6">Role</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {usersLoading ? (
+                  <tr><td colSpan={4} className="text-center py-6 text-slate-500 animate-pulse font-medium">Loading users...</td></tr>
+                ) : users.length === 0 ? (
+                  <tr><td colSpan={4} className="text-center py-6 text-slate-500">No users found.</td></tr>
+                ) : users.map((u: any) => (
+                  <tr key={u._id} className="hover:bg-slate-50 transition-colors bg-white">
+                    <td className="py-4 px-6 font-semibold text-slate-900">@{u.username}</td>
+                    <td className="py-4 px-6 text-sm text-slate-500">{u.email}</td>
+                    <td className="py-4 px-6 text-sm text-slate-500 font-mono">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td className="py-4 px-6">
                       <select 
                         value={u.role || 'user'}
                         onChange={(e) => handleRoleChange(u._id, e.target.value)}
                         disabled={u._id === user._id}
-                        className={`text-sm font-bold rounded-xl px-3 py-1.5 outline-none cursor-pointer border transition-colors ${
+                        className={`text-sm font-bold rounded-lg px-3 py-1.5 outline-none cursor-pointer border shadow-sm transition-colors ${
                           u.role === 'admin' || u.role === 'legacy_account' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 
                           u.role === 'moderator' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 
-                          'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                          'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
-                        style={{ opacity: u._id === user._id ? 0.5 : 1 }}
+                        style={{ opacity: u._id === user._id ? 0.6 : 1 }}
                       >
                         <option value="user">User</option>
                         <option value="moderator">Moderator</option>
                         <option value="admin">Admin</option>
                       </select>
-                    </div>
-                  </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            )}
+              </tbody>
+            </table>
           </div>
         </section>
       )}
