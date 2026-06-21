@@ -76,6 +76,7 @@ export default function QaThreadPage(props: { params: Promise<{ id: string }> })
         socket.off('user_typing', handleUserTyping);
         socket.off('user_stop_typing', handleUserStopTyping);
         socket.off('new_answer', handleNewAnswer);
+        socket.emit('leave_thread', params.id);
       };
     }
   }, [socket, params.id]);

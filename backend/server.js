@@ -42,6 +42,11 @@ io.on('connection', (socket) => {
     console.log(`Socket joined thread room: thread_${threadId}`);
   });
 
+  socket.on('leave_thread', (threadId) => {
+    socket.leave(`thread_${threadId}`);
+    console.log(`Socket left thread room: thread_${threadId}`);
+  });
+
   // Broadcast typing indicator to everyone else in the thread
   socket.on('typing', ({ threadId, username }) => {
     socket.to(`thread_${threadId}`).emit('user_typing', { username });

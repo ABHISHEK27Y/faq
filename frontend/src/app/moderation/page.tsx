@@ -197,9 +197,13 @@ export default function ModerationPage() {
                 <React.Fragment key={suggestion._id}>
                   <tr className={`border-b border-white/20 transition-colors ${expandedSuggestionId === suggestion._id ? 'bg-white/60' : 'hover:bg-white/40'}`}>
                     <td className="py-4 px-6 text-slate-500 text-sm font-medium">
-                      <Link href={`/faqs/${suggestion.faq?.slug}`} className="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">
-                        {suggestion.faq?.title?.substring(0, 30)}...
-                      </Link>
+                      {suggestion.faq?.slug ? (
+                        <Link href={`/faqs/${suggestion.faq.slug}`} className="text-indigo-600 hover:text-indigo-800 hover:underline" target="_blank">
+                          {suggestion.faq?.title?.substring(0, 30)}...
+                        </Link>
+                      ) : (
+                        <span className="text-slate-500 line-through">Deleted FAQ</span>
+                      )}
                     </td>
                     <td className="py-4 px-6 font-bold text-slate-900">
                       <button onClick={() => toggleSuggestionExpand(suggestion._id)} className="hover:text-indigo-600 transition-colors flex items-center gap-2 text-left">

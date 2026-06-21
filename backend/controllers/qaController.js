@@ -20,21 +20,26 @@ const checkModeration = async (text) => {
 
 const autoAnswerQuestion = async (questionId, title, body, authorId, io) => {
   try {
-    const queryEmbedding = await generateEmbedding(`${title}\n${body}`);
-    if (!queryEmbedding || queryEmbedding.length === 0) return;
+    let context = "";
+    try {
+      const queryEmbedding = await generateEmbedding(`${title}\n${body}`);
+      if (queryEmbedding && queryEmbedding.length > 0) {
+        const faqs = await FAQ.find({ status: 'published' }).select('title answer embedding').lean();
+        const scoredFaqs = faqs.map(faq => {
+          let score = 0;
+          if (faq.embedding && faq.embedding.length > 0) {
+            score = cosineSimilarity(queryEmbedding, faq.embedding);
+          }
+          return { faq, score };
+        }).filter(item => item.score > 0.65).sort((a, b) => b.score - a.score).slice(0, 3);
 
-    const faqs = await FAQ.find({ status: 'published' });
-    const scoredFaqs = faqs.map(faq => {
-      let score = 0;
-      if (faq.embedding && faq.embedding.length > 0) {
-        score = cosineSimilarity(queryEmbedding, faq.embedding);
+        if (scoredFaqs.length > 0) {
+          context = scoredFaqs.map(item => `Q: ${item.faq.title}\nA: ${item.faq.answer}`).join("\n\n");
+        }
       }
-      return { faq, score };
-    }).filter(item => item.score > 0.65).sort((a, b) => b.score - a.score).slice(0, 3);
-
-    if (scoredFaqs.length === 0) return;
-
-    const context = scoredFaqs.map(item => `Q: ${item.faq.title}\nA: ${item.faq.answer}`).join("\n\n");
+    } catch (err) {
+      console.error("Auto-Answer Embedding Search Error:", err.message);
+    }
 
     const baseContext = `
       Base Platform Context (ALWAYS TRUE):
@@ -370,7 +375,7 @@ const createComment = async (req, res) => {
     }
     
     // Broadcast to thread
-    if (req.io && answer) req.io.to(`thread_${answer.question._id}`).emit('new_answer');
+    if (req.io && answer && answer.question) req.io.to(`thread_${answer.question._id}`).emit('new_answer');
 
     res.status(201).json(comment);
   } catch (error) { res.status(400).json({ message: error.message }); }

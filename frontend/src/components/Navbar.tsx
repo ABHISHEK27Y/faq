@@ -30,7 +30,7 @@ export default function Navbar() {
         headers: { Authorization: `Bearer ${(user as any)?.token}` },
       });
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
-      if (link) window.location.href = link;
+      if (link && link.startsWith('/')) window.location.href = link;
     } catch (err) { console.error(err); }
   };
 
@@ -102,26 +102,13 @@ export default function Navbar() {
                 </p>
               ) : (
                 notifications.map(n => (
-                  <div
+                  <button
                     key={n._id}
                     onClick={() => markAsRead(n._id, n.link)}
-                    className="flex gap-3 cursor-pointer"
-                    style={{
-                      padding: '10px 16px',
-                      borderBottom: '1px solid var(--hairline)',
-                      background: !n.isRead ? 'var(--clay-soft)' : 'var(--surface)',
-                      transition: 'background 120ms ease',
-                    }}
+                    className="flex gap-3 w-full text-left cursor-pointer hover:bg-[var(--clay-soft)] p-3 transition-colors border-b border-[var(--hairline)]"
+                    style={{ background: !n.isRead ? 'var(--clay-soft)' : 'var(--surface)' }}
                   >
-                    <div style={{
-                      marginTop: 6,
-                      width: 7,
-                      height: 7,
-                      borderRadius: '50%',
-                      flexShrink: 0,
-                      background: !n.isRead ? 'var(--coral-dot)' : 'var(--hairline)',
-                    }} />
-                    <div>
+                    <div className="flex-1">
                       <p style={{ fontSize: '0.82rem', fontWeight: n.isRead ? 400 : 600, color: 'var(--ink)', marginBottom: 2 }}>
                         {n.message}
                       </p>
@@ -129,7 +116,7 @@ export default function Navbar() {
                         {new Date(n.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 ))
               )}
             </div>

@@ -23,7 +23,7 @@ const generateChatResponse = async (req, res) => {
     try {
       const queryEmbedding = await generateEmbedding(sanitizedMessage);
       if (queryEmbedding && queryEmbedding.length > 0) {
-        const faqs = await FAQ.find({ status: 'published' });
+        const faqs = await FAQ.find({ status: 'published' }).select('title answer embedding').lean();
         const scoredFaqs = faqs.map(faq => {
           let score = 0;
           if (faq.embedding && faq.embedding.length > 0) {
@@ -74,7 +74,7 @@ const generateChatResponse = async (req, res) => {
   } catch (error) {
     console.error('Gemini API Error:', error);
     // Fallback response if API fails or key is invalid
-    res.json({ reply: "I'm currently experiencing some server issues. Please try again in a little bit! 😅" });
+    res.status(500).json({ reply: "I'm currently experiencing some server issues. Please try again in a little bit! 😅" });
   }
 };
 
