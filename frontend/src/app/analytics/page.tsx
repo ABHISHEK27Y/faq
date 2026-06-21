@@ -12,13 +12,13 @@ export default function AnalyticsDashboard() {
   const [usersLoading, setUsersLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAnalytics = axios.get('http://localhost:5000/api/analytics/dashboard')
+    const fetchAnalytics = axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/analytics/dashboard`)
       .then(res => setData(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
 
     if (user?.token) {
-      axios.get('http://localhost:5000/api/auth/users', { headers: { Authorization: `Bearer ${user.token}` } })
+      axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/users`, { headers: { Authorization: `Bearer ${user.token}` } })
         .then(res => setUsers(res.data))
         .catch(console.error)
         .finally(() => setUsersLoading(false));
@@ -27,7 +27,7 @@ export default function AnalyticsDashboard() {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
-      await axios.put(`http://localhost:5000/api/auth/users/${userId}/role`, { role: newRole }, {
+      await axios.put(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/users/${userId}/role`, { role: newRole }, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setUsers(prev => prev.map(u => u._id === userId ? { ...u, role: newRole } : u));
