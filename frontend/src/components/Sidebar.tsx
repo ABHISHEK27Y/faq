@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const NAV = [
   { href: '/',            icon: 'bi-grid-1x2',         label: 'Dashboard' },
   { href: '/faqs',        icon: 'bi-question-circle',  label: 'FAQs' },
+  { href: '/faqs/submit', icon: 'bi-journal-plus',     label: 'Propose FAQ' },
   { href: '/qa',          icon: 'bi-chat-dots',        label: 'Questions' },
   { href: '/qa/ask',      icon: 'bi-plus-circle',      label: 'Ask' },
   { href: '/bookmarks',   icon: 'bi-bookmark',         label: 'Bookmarks' },

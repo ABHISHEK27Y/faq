@@ -101,34 +101,39 @@ function FaqContent() {
 
       {/* Header */}
       <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
-            {categorySlug && categoryName ? categoryName : 'Browse FAQs'}
-          </h1>
-          <p style={{ color: 'var(--graphite)', fontSize: '0.9rem' }}>
-            {categorySlug && categoryName
-              ? `Showing FAQs in "${categoryName}"`
-              : 'Find answers to commonly asked questions.'}
-          </p>
-          {categorySlug && (
-            <button
-              onClick={() => router.push('/faqs')}
-              style={{
-                marginTop: 8,
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '4px 12px',
-                background: 'var(--hairline)',
-                color: 'var(--graphite)',
-                border: 'none',
-                borderRadius: '99px',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <i className="bi bi-x" /> Clear filter
-            </button>
-          )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1 style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
+              {categorySlug && categoryName ? categoryName : 'Browse FAQs'}
+            </h1>
+            <p style={{ color: 'var(--graphite)', fontSize: '0.9rem' }}>
+              {categorySlug && categoryName
+                ? `Showing FAQs in "${categoryName}"`
+                : 'Find answers to commonly asked questions.'}
+            </p>
+            {categorySlug && (
+              <button
+                onClick={() => router.push('/faqs')}
+                style={{
+                  marginTop: 8,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '4px 12px',
+                  background: 'var(--hairline)',
+                  color: 'var(--graphite)',
+                  border: 'none',
+                  borderRadius: '99px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <i className="bi bi-x" /> Clear filter
+              </button>
+            )}
+          </div>
+          <Link href="/faqs/submit" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <i className="bi bi-plus-circle" /> Propose FAQ
+          </Link>
         </div>
 
         {/* Search */}
