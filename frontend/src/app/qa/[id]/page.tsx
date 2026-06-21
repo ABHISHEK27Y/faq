@@ -62,12 +62,20 @@ export default function QaThreadPage(props: { params: Promise<{ id: string }> })
         });
       };
 
+      const handleNewAnswer = () => {
+        axios.get(`http://localhost:5000/api/qa/${params.id}`)
+          .then(res => setData(res.data))
+          .catch(console.error);
+      };
+
       socket.on('user_typing', handleUserTyping);
       socket.on('user_stop_typing', handleUserStopTyping);
+      socket.on('new_answer', handleNewAnswer);
 
       return () => {
         socket.off('user_typing', handleUserTyping);
         socket.off('user_stop_typing', handleUserStopTyping);
+        socket.off('new_answer', handleNewAnswer);
       };
     }
   }, [socket, params.id]);

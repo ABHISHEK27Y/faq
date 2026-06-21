@@ -63,7 +63,10 @@ Write your answer in Markdown format. Keep it concise but fully answer the quest
       `✨ Yaksha Auto-Answered your question "${title.substring(0, 30)}..."`,
       `/qa/${questionId}`
     );
-    if (io) io.to(`user_${authorId}`).emit('new_notification');
+    if (io) {
+      io.to(`user_${authorId}`).emit('new_notification');
+      io.to(`thread_${questionId}`).emit('new_answer');
+    }
     
   } catch (err) {
     console.error("Auto-Answer Pipeline Error:", err.message);
@@ -171,6 +174,9 @@ const createAnswer = async (req, res) => {
       // Emit live notification to user
       if (req.io) req.io.to(`user_${question.author}`).emit('new_notification');
     }
+    
+    // Broadcast to thread that there's a new answer
+    if (req.io) req.io.to(`thread_${questionId}`).emit('new_answer');
     
     res.status(201).json(createdAnswer);
   } catch (error) { res.status(400).json({ message: error.message }); }
@@ -347,6 +353,9 @@ const createComment = async (req, res) => {
       );
       if (req.io) req.io.to(`user_${answer.author}`).emit('new_notification');
     }
+    
+    // Broadcast to thread
+    if (req.io && answer) req.io.to(`thread_${answer.question._id}`).emit('new_answer');
 
     res.status(201).json(comment);
   } catch (error) { res.status(400).json({ message: error.message }); }
