@@ -154,4 +154,35 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile, updateProfile };
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).select('-password').sort('-createdAt');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updateUserRole = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Prevent modifying one's own role to avoid accidental lockout
+    if (user._id.toString() === req.user.id.toString()) {
+       return res.status(400).json({ message: 'Cannot modify your own role' });
+    }
+    
+    if (['admin', 'moderator', 'user'].includes(req.body.role)) {
+      user.role = req.body.role;
+      await user.save();
+      res.json({ _id: user._id, username: user.username, role: user.role });
+    } else {
+      res.status(400).json({ message: 'Invalid role' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, updateProfile, getAllUsers, updateUserRole };

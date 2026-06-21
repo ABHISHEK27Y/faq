@@ -41,7 +41,7 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in duration-500 pb-16">
+    <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in duration-500 pb-16" style={{ marginTop: '2rem' }}>
       <div className="text-center pt-8">
         <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white mb-6 shadow-xl shadow-indigo-500/30 transform hover:scale-105 transition-transform">
           <i className="bi bi-trophy-fill text-4xl"></i>

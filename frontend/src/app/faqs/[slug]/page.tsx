@@ -131,19 +131,20 @@ export default function FaqDetailPage(props: { params: Promise<{ slug: string }>
     }
   };
 
-  if (loading) return <div className="max-w-7xl mx-auto p-8 text-center animate-pulse text-slate-500">Loading FAQ...</div>;
-  if (!faq) return <div className="max-w-7xl mx-auto p-8 text-center text-slate-500">FAQ not found.</div>;
+  if (loading) return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--graphite)' }}>Loading FAQ…</div>;
+  if (!faq) return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--graphite)' }}>FAQ not found.</div>;
 
   const score = (faq.upvoteCount || 0) - (faq.downvoteCount || 0);
 
   return (
-    <div className="max-w-[1400px] mx-auto animate-in fade-in duration-300">
-      <div className="text-sm font-medium text-slate-500 mb-6 flex items-center gap-2">
-        <Link href="/" className="hover:text-indigo-600">Dashboard</Link>
-        <i className="bi bi-chevron-right text-[10px]"></i>
-        <Link href={`/faqs?category=${faq.category?.slug}`} className="hover:text-indigo-600">{faq.category?.name || 'General'}</Link>
-        <i className="bi bi-chevron-right text-[10px]"></i>
-        <span className="text-slate-400">{faq.title}</span>
+    <div style={{ maxWidth: 1200, marginTop: '2rem' }}>
+      {/* Breadcrumb */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--graphite)', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <Link href="/" style={{ color: '#A855F7', fontWeight: 600 }}>Home</Link>
+        <i className="bi bi-chevron-right" style={{ fontSize: '0.65rem' }} />
+        <Link href="/faqs" style={{ color: '#A855F7', fontWeight: 600 }}>FAQs</Link>
+        <i className="bi bi-chevron-right" style={{ fontSize: '0.65rem' }} />
+        <span style={{ color: 'var(--graphite)' }}>{faq.title}</span>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8 items-start">

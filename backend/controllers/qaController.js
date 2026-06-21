@@ -20,30 +20,50 @@ const checkModeration = async (text) => {
 
 const autoAnswerQuestion = async (questionId, title, body, authorId, io) => {
   try {
-    const queryEmbedding = await generateEmbedding(`${title}\n${body}`);
-    if (!queryEmbedding || queryEmbedding.length === 0) return;
+    let context = "";
+    try {
+      const queryEmbedding = await generateEmbedding(`${title}\n${body}`);
+      if (queryEmbedding && queryEmbedding.length > 0) {
+        const faqs = await FAQ.find({ status: 'published' }).select('title answer embedding').lean();
+        const scoredFaqs = faqs.map(faq => {
+          let score = 0;
+          if (faq.embedding && faq.embedding.length > 0) {
+            score = cosineSimilarity(queryEmbedding, faq.embedding);
+          }
+          return { faq, score };
+        }).filter(item => item.score > 0.65).sort((a, b) => b.score - a.score).slice(0, 3);
 
-    const faqs = await FAQ.find({ status: 'published' });
-    const scoredFaqs = faqs.map(faq => {
-      let score = 0;
-      if (faq.embedding && faq.embedding.length > 0) {
-        score = cosineSimilarity(queryEmbedding, faq.embedding);
+        if (scoredFaqs.length > 0) {
+          context = scoredFaqs.map(item => `Q: ${item.faq.title}\nA: ${item.faq.answer}`).join("\n\n");
+        }
       }
-      return { faq, score };
-    }).filter(item => item.score > 0.65).sort((a, b) => b.score - a.score).slice(0, 3);
+    } catch (err) {
+      console.error("Auto-Answer Embedding Search Error:", err.message);
+    }
 
-    if (scoredFaqs.length === 0) return;
-
-    const context = scoredFaqs.map(item => `Q: ${item.faq.title}\nA: ${item.faq.answer}`).join("\n\n");
+    const baseContext = `
+      Base Platform Context (ALWAYS TRUE):
+      - Internship Name: Vicharanashala Internship (VINS)
+      - Organization: Lab of Prof. Sudarshan Iyengar at IIT Ropar.
+      - Duration: Two-month duration with a one-month grace period. Start anytime in 2026. Finish by 31 Dec 2026.
+      - Format: Entirely online. Open-source software engineering for India-centric problems (Annam.AI, ViBe).
+      - Stipend: No stipend. It is an unpaid internship, but the programme is completely free.
+      - Badges: Bronze (Training), Silver (OS Project), Gold (Significant feature), Platinum (Visit lab with stipend).
+      - Workload: 6 to 10 hours of focused work a day.
+      - NOC (No Objection Certificate) from college is mandatory to start.
+    `;
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const prompt = `You are 'Yaksha', an ultra-fast AI assistant for VLED. A user just asked a question in the community hub.
-Answer their question in a helpful, friendly, and slightly Gen-Z/Hinglish tone.
-You MUST base your answer strictly on the following FAQ knowledge base context. If the context doesn't fully answer the question, say so politely.
+    const prompt = `You are 'Yaksha', an ultra-fast AI assistant for the Vicharanashala Internship (samagama.in). A user just asked a question in the community hub.
+Analyze the user's language and tone from their question. If the user communicates using Gen-Z slang or Hinglish, respond back in a matching chill, relatable Gen-Z/Hinglish tone.
+Otherwise, if the user communicates in standard or formal language, respond strictly in a professional, clear, and helpful tone.
+You MUST base your answer strictly on the following context. If the context doesn't fully answer the question, say so politely but try to be as helpful as possible using the Base Platform Context.
 
-FAQ CONTEXT:
-${context}
+${baseContext}
+
+FAQ DATABASE CONTEXT:
+${context || "No specific FAQ found, rely on Base Platform Context."}
 
 USER'S QUESTION:
 Title: ${title}
@@ -63,7 +83,10 @@ Write your answer in Markdown format. Keep it concise but fully answer the quest
       `✨ Yaksha Auto-Answered your question "${title.substring(0, 30)}..."`,
       `/qa/${questionId}`
     );
-    if (io) io.to(`user_${authorId}`).emit('new_notification');
+    if (io) {
+      io.to(`user_${authorId}`).emit('new_notification');
+      io.to(`thread_${questionId}`).emit('new_answer');
+    }
     
   } catch (err) {
     console.error("Auto-Answer Pipeline Error:", err.message);
@@ -171,6 +194,9 @@ const createAnswer = async (req, res) => {
       // Emit live notification to user
       if (req.io) req.io.to(`user_${question.author}`).emit('new_notification');
     }
+    
+    // Broadcast to thread that there's a new answer
+    if (req.io) req.io.to(`thread_${questionId}`).emit('new_answer');
     
     res.status(201).json(createdAnswer);
   } catch (error) { res.status(400).json({ message: error.message }); }
@@ -347,6 +373,9 @@ const createComment = async (req, res) => {
       );
       if (req.io) req.io.to(`user_${answer.author}`).emit('new_notification');
     }
+    
+    // Broadcast to thread
+    if (req.io && answer && answer.question) req.io.to(`thread_${answer.question._id}`).emit('new_answer');
 
     res.status(201).json(comment);
   } catch (error) { res.status(400).json({ message: error.message }); }

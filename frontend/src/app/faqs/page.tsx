@@ -4,78 +4,90 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 
+const CARD_ACCENTS = [
+  { border: '#F97316', bg: '#FFF7ED', tag: '#C2410C' },
+  { border: '#A855F7', bg: '#FAF5FF', tag: '#7E22CE' },
+  { border: '#22C55E', bg: '#F0FDF4', tag: '#15803D' },
+  { border: '#3B82F6', bg: '#EFF6FF', tag: '#1D4ED8' },
+  { border: '#EC4899', bg: '#FDF2F8', tag: '#BE185D' },
+  { border: '#14B8A6', bg: '#F0FDFA', tag: '#0F766E' },
+];
+
 function FaqContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const q = searchParams.get('q') || '';
-  
-  const [faqs, setFaqs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [searchInput, setSearchInput] = useState(q);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const q            = searchParams.get('q')            || '';
+  const categorySlug = searchParams.get('categorySlug') || '';
 
-  // Initial fetch or search change
+  const [faqs, setFaqs]                 = useState<any[]>([]);
+  const [categoryName, setCategoryName] = useState('');
+  const [loading, setLoading]           = useState(true);
+  const [loadingMore, setLoadingMore]   = useState(false);
+  const [searchInput, setSearchInput]   = useState(q);
+  const [page, setPage]                 = useState(1);
+  const [hasMore, setHasMore]           = useState(true);
+
+  useEffect(() => {
+    setSearchInput(q);
+  }, [q]);
+
+  const buildUrl = (p: number) => {
+    let url = `http://localhost:5000/api/faqs?page=${p}&limit=10`;
+    if (q)            url += `&keyword=${encodeURIComponent(q)}`;
+    if (categorySlug) url += `&categorySlug=${encodeURIComponent(categorySlug)}`;
+    return url;
+  };
+
   useEffect(() => {
     const fetchFaqs = async () => {
       try {
         setLoading(true);
         setPage(1);
-        const url = `http://localhost:5000/api/faqs?page=1&limit=10${q ? `&keyword=${encodeURIComponent(q)}` : ''}`;
-        const res = await axios.get(url);
-        
-        const data = res.data.faqs ? res.data.faqs : (res.data.data || res.data);
+        setCategoryName('');
+        const res = await axios.get(buildUrl(1));
+        const data = res.data.faqs ?? res.data.data ?? res.data;
         setFaqs(data);
         setHasMore(res.data.page < res.data.pages);
-
-        if (q) {
-          axios.post('http://localhost:5000/api/analytics/log-search', { query: q }).catch(() => {});
-        }
+        if (data.length > 0 && data[0].category?.name) setCategoryName(data[0].category.name);
+        if (q) axios.post('http://localhost:5000/api/analytics/log-search', { query: q }).catch(() => {});
       } catch (err) {
-        console.error("Failed to fetch FAQs", err);
+        console.error('Failed to fetch FAQs', err);
       } finally {
         setLoading(false);
       }
     };
     fetchFaqs();
-  }, [q]);
+  }, [q, categorySlug]);
 
-  // Infinite Scroll fetch
   useEffect(() => {
     if (page === 1) return;
     const fetchMore = async () => {
       try {
         setLoadingMore(true);
-        const url = `http://localhost:5000/api/faqs?page=${page}&limit=10${q ? `&keyword=${encodeURIComponent(q)}` : ''}`;
-        const res = await axios.get(url);
-        
-        const data = res.data.faqs ? res.data.faqs : res.data;
+        const res = await axios.get(buildUrl(page));
+        const data = res.data.faqs ?? res.data.data ?? res.data;
         setFaqs(prev => [...prev, ...data]);
         setHasMore(res.data.page < res.data.pages);
       } catch (err) {
-        console.error("Failed to fetch more FAQs", err);
+        console.error('Failed to fetch more FAQs', err);
       } finally {
         setLoadingMore(false);
       }
     };
     fetchMore();
-  }, [page, q]);
+  }, [page]);
 
-  // Intersection Observer
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
+      entries => {
         if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
           setPage(prev => prev + 1);
         }
       },
       { threshold: 1.0 }
     );
-    
     const sentinel = document.getElementById('scroll-sentinel');
     if (sentinel) observer.observe(sentinel);
-    
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore]);
 
@@ -85,56 +97,174 @@ function FaqContent() {
   };
 
   return (
-    <div className="max-w-4xl">
-      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Browse FAQs</h1>
-          <p className="text-slate-500 mt-2 text-lg">Find answers to commonly asked questions.</p>
+    <div style={{ maxWidth: 860, margin: '2rem auto 0' }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1 style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
+              {categorySlug && categoryName ? categoryName : 'Browse FAQs'}
+            </h1>
+            <p style={{ color: 'var(--graphite)', fontSize: '0.9rem' }}>
+              {categorySlug && categoryName
+                ? `Showing FAQs in "${categoryName}"`
+                : 'Find answers to commonly asked questions.'}
+            </p>
+            {categorySlug && (
+              <button
+                onClick={() => router.push('/faqs')}
+                style={{
+                  marginTop: 8,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '4px 12px',
+                  background: 'var(--hairline)',
+                  color: 'var(--graphite)',
+                  border: 'none',
+                  borderRadius: '99px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <i className="bi bi-x" /> Clear filter
+              </button>
+            )}
+          </div>
+          <Link href="/faqs/submit" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <i className="bi bi-plus-circle" /> Propose FAQ
+          </Link>
         </div>
-        <form onSubmit={handleSearch} className="relative w-full md:w-[400px] lg:w-[500px]">
-          <button type="submit" className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          </button>
-          <input 
-            type="text" 
-            placeholder="Search FAQs (e.g. NOC, hostel)..." 
-            className="w-full bg-white border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 text-sm shadow-sm outline-none transition-all placeholder:text-slate-400" 
+
+        {/* Search */}
+        <form onSubmit={handleSearch} style={{
+          display: 'flex',
+          alignItems: 'center',
+          border: '1.5px solid var(--hairline-strong)',
+          borderRadius: '99px',
+          background: 'var(--surface)',
+          overflow: 'hidden',
+          maxWidth: 520,
+          boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+        }}>
+          <i className="bi bi-search" style={{ padding: '0 12px 0 18px', color: 'var(--graphite)', fontSize: '1rem', flexShrink: 0 }} />
+          <input
+            type="text"
+            placeholder="Search FAQs…"
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={e => setSearchInput(e.target.value)}
+            style={{
+              flex: 1,
+              height: 44,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              fontFamily: 'var(--font-body)',
+              fontSize: '0.9rem',
+              color: 'var(--ink)',
+              minWidth: 0,
+            }}
           />
+          <button type="submit" style={{
+            height: 44,
+            padding: '0 20px',
+            background: 'linear-gradient(135deg, #F97316 0%, #A855F7 100%)',
+            color: '#fff',
+            border: 'none',
+            fontWeight: 700,
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            borderRadius: '0 99px 99px 0',
+          }}>
+            Search
+          </button>
         </form>
       </div>
 
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        <button onClick={() => router.push('/faqs')} className="badge-soft !bg-indigo-600 !text-white">All Topics</button>
+      {/* Filter strip */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => router.push('/faqs')}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '5px 14px',
+            background: 'linear-gradient(135deg, #F97316, #A855F7)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '99px',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          All Topics
+        </button>
       </div>
 
-      <div className="space-y-4">
+      {/* FAQ cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {loading && page === 1 ? (
-          <div className="text-center p-8 text-slate-500 animate-pulse">Loading FAQs from API...</div>
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--graphite)', fontSize: '0.875rem' }}>
+            Loading FAQs…
+          </div>
         ) : faqs.length === 0 ? (
-          <div className="text-center p-8 text-slate-500">No FAQs found matching your search.</div>
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--graphite)', fontSize: '0.875rem' }}>
+            No FAQs found{q ? ` for "${q}"` : ''}.
+          </div>
         ) : (
           <>
-            {faqs.map(faq => (
-              <Link key={faq.slug} href={`/faqs/${faq.slug}`} className="block card-modern p-5 hover:-translate-y-1 transition-transform">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <h3 className="font-bold text-lg text-slate-900 mb-1">{faq.title}</h3>
-                  <span className="text-xs font-bold text-indigo-600">{faq.category?.name || 'General'}</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
-                  <span className="flex items-center gap-1"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> {faq.viewCount}</span>
-                  <span className="flex items-center gap-1 text-emerald-600"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg> +{faq.upvoteCount - faq.downvoteCount}</span>
-                </div>
-              </div>
-            </Link>
-            ))}
-            
-            {/* Infinite Scroll Sentinel */}
-            <div id="scroll-sentinel" className="h-4 w-full"></div>
-            {loadingMore && <div className="text-center py-4 text-slate-500 animate-pulse text-sm">Loading more FAQs...</div>}
-            {!hasMore && faqs.length > 0 && <div className="text-center py-8 text-slate-400 text-sm">You've reached the end of the list.</div>}
+            {faqs.map((faq, i) => {
+              const accent = CARD_ACCENTS[i % CARD_ACCENTS.length];
+              const score = (faq.upvoteCount ?? 0) - (faq.downvoteCount ?? 0);
+              return (
+                <Link
+                  key={faq.slug}
+                  href={`/faqs/${faq.slug}`}
+                  style={{
+                    display: 'block',
+                    background: 'var(--surface)',
+                    border: `1.5px solid var(--hairline)`,
+                    borderLeft: `4px solid ${accent.border}`,
+                    borderRadius: 'var(--radius-md)',
+                    padding: '18px 20px',
+                    textDecoration: 'none',
+                    transition: 'box-shadow 140ms ease, transform 140ms ease',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 18px rgba(0,0,0,0.09)`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>
+                        {faq.title}
+                      </h3>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center',
+                        padding: '3px 10px',
+                        background: accent.bg,
+                        color: accent.tag,
+                        borderRadius: '99px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                      }}>
+                        {faq.category?.name || 'General'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', color: 'var(--graphite)', fontFamily: 'var(--font-mono)' }}>
+                        <i className="bi bi-eye" /> {faq.viewCount ?? 0}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', color: score >= 0 ? '#16a34a' : '#dc2626', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                        <i className={`bi bi-hand-thumbs-${score >= 0 ? 'up' : 'down'}`} /> {score >= 0 ? '+' : ''}{score}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+            <div id="scroll-sentinel" style={{ height: 16 }} />
+            {loadingMore && <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--graphite)', fontSize: '0.85rem' }}>Loading more…</div>}
+            {!hasMore && faqs.length > 0 && <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--graphite)', fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}>✦ End of list</div>}
           </>
         )}
       </div>
@@ -144,7 +274,7 @@ function FaqContent() {
 
 export default function FaqsPage() {
   return (
-    <Suspense fallback={<div className="p-10 text-center text-slate-500 animate-pulse">Loading FAQs...</div>}>
+    <Suspense fallback={<div style={{ padding: '3rem', textAlign: 'center', color: 'var(--graphite)' }}>Loading FAQs…</div>}>
       <FaqContent />
     </Suspense>
   );
