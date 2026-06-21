@@ -19,7 +19,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE"]
   }
 });
@@ -72,18 +72,18 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
 app.use(express.json());
 
 // Session & Passport Configuration
-app.use(session({ secret: 'yaksha_secret_mern', resave: false, saveUninitialized: true }));
+app.use(session({ secret: process.env.SESSION_SECRET || 'yaksha_secret_mern', resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
 
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || 'dummy_client_id',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'dummy_client_secret',
-    callbackURL: "http://localhost:5000/api/auth/google/callback"
+    callbackURL: `${process.env.API_URL || 'http://localhost:5000'}/api/auth/google/callback`
   },
   async (accessToken, refreshToken, profile, cb) => {
     const User = require('./models/User');
@@ -160,16 +160,21 @@ app.get('/', (req, res) => {
 const path = require('path');
 const startServer = async () => {
   try {
-    const mongoServer = await MongoMemoryServer.create({
-      instance: {
-        dbPath: path.join(__dirname, 'mongo-data'),
-        storageEngine: 'wiredTiger'
-      }
-    });
-    const uri = mongoServer.getUri();
+    let uri = process.env.MONGO_URI;
+    if (!uri) {
+      const mongoServer = await MongoMemoryServer.create({
+        instance: {
+          dbPath: path.join(__dirname, 'mongo-data'),
+          storageEngine: 'wiredTiger'
+        }
+      });
+      uri = mongoServer.getUri();
+      console.log('✅ MongoDB Memory Server Connected (Persistent)');
+    } else {
+      console.log('✅ Connected to MongoDB via MONGO_URI');
+    }
     
     await mongoose.connect(uri);
-    console.log('✅ MongoDB Memory Server Connected (Persistent)');
     
     await seedDatabase();
 
