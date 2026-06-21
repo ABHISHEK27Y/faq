@@ -27,6 +27,10 @@ function FaqContent() {
   const [page, setPage]                 = useState(1);
   const [hasMore, setHasMore]           = useState(true);
 
+  useEffect(() => {
+    setSearchInput(q);
+  }, [q]);
+
   const buildUrl = (p: number) => {
     let url = `http://localhost:5000/api/faqs?page=${p}&limit=10`;
     if (q)            url += `&keyword=${encodeURIComponent(q)}`;
@@ -61,7 +65,7 @@ function FaqContent() {
       try {
         setLoadingMore(true);
         const res = await axios.get(buildUrl(page));
-        const data = res.data.faqs ?? res.data;
+        const data = res.data.faqs ?? res.data.data ?? res.data;
         setFaqs(prev => [...prev, ...data]);
         setHasMore(res.data.page < res.data.pages);
       } catch (err) {
@@ -71,7 +75,7 @@ function FaqContent() {
       }
     };
     fetchMore();
-  }, [page, q, categorySlug]);
+  }, [page]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

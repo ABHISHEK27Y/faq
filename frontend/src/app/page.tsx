@@ -22,15 +22,15 @@ export default function Home() {
   const [analytics, setAnalytics]    = useState<any>({ totalFaqs: 0, totalQuestions: 0 });
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       axios.get(`${API}/api/faqs`),
       axios.get(`${API}/api/faqs/categories`),
       axios.get(`${API}/api/analytics/dashboard`),
     ])
       .then(([faqRes, catRes, analyticsRes]) => {
-        setFaqs(faqRes.data.faqs ?? []);
-        setCategories(catRes.data ?? []);
-        setAnalytics(analyticsRes.data ?? {});
+        if (faqRes.status === 'fulfilled') setFaqs(faqRes.value.data.faqs ?? faqRes.value.data.data ?? faqRes.value.data ?? []);
+        if (catRes.status === 'fulfilled') setCategories(catRes.value.data ?? []);
+        if (analyticsRes.status === 'fulfilled') setAnalytics(analyticsRes.value.data ?? {});
       })
       .catch(console.error);
   }, []);

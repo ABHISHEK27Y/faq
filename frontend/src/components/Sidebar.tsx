@@ -19,7 +19,9 @@ const ADMIN_NAV = [
 ];
 
 function isActive(href: string, pathname: string) {
-  return href === '/' ? pathname === '/' : pathname.startsWith(href);
+  if (href === '/') return pathname === '/';
+  if (href === '/qa' && pathname.startsWith('/qa/ask')) return false;
+  return pathname === href || pathname.startsWith(href + '/');
 }
 
 function RailItem({ href, icon, label, pathname }: { href: string; icon: string; label: string; pathname: string }) {
