@@ -39,7 +39,8 @@ const autoAnswerQuestion = async (questionId, title, body, authorId, io) => {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const prompt = `You are 'Yaksha', an ultra-fast AI assistant for VLED. A user just asked a question in the community hub.
-Answer their question in a helpful, friendly, and slightly Gen-Z/Hinglish tone.
+Analyze the user's language and tone from their question. If the user communicates using Gen-Z slang or Hinglish, respond back in a matching chill, relatable Gen-Z/Hinglish tone.
+Otherwise, if the user communicates in standard or formal language, respond strictly in a professional, clear, and helpful tone.
 You MUST base your answer strictly on the following FAQ knowledge base context. If the context doesn't fully answer the question, say so politely.
 
 FAQ CONTEXT:
