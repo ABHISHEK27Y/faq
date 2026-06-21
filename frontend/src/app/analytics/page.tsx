@@ -2,17 +2,39 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AnalyticsDashboard() {
+  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/analytics/dashboard')
+    const fetchAnalytics = axios.get('http://localhost:5000/api/analytics/dashboard')
       .then(res => setData(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+
+    if (user?.token) {
+      axios.get('http://localhost:5000/api/auth/users', { headers: { Authorization: `Bearer ${user.token}` } })
+        .then(res => setUsers(res.data))
+        .catch(console.error)
+        .finally(() => setUsersLoading(false));
+    }
+  }, [user]);
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      await axios.put(`http://localhost:5000/api/auth/users/${userId}/role`, { role: newRole }, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+      setUsers(prev => prev.map(u => u._id === userId ? { ...u, role: newRole } : u));
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to update role');
+    }
+  };
 
   if (loading) return <div className="p-10 text-center animate-pulse text-slate-500">Loading Analytics...</div>;
   if (!data) return <div className="p-10 text-center text-slate-500">Failed to load analytics.</div>;
@@ -126,6 +148,58 @@ export default function AnalyticsDashboard() {
           </section>
         </div>
       </div>
+
+      {/* User Management Section */}
+      {(user?.role === 'admin' || user?.role === 'legacy_account') && (
+        <section className="card-modern mt-8 overflow-hidden animate-slide-up border-t-4 border-t-indigo-500">
+          <div className="border-b border-slate-100 px-6 py-5">
+            <h2 className="section-title text-indigo-900">User Role Management</h2>
+            <p className="text-slate-500 text-sm mt-1">View all registered users and assign administrative privileges.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50/50">
+                <tr className="border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                  <th className="py-4 px-6">Username</th>
+                  <th className="py-4 px-6">Email</th>
+                  <th className="py-4 px-6">Joined</th>
+                  <th className="py-4 px-6">Role</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {usersLoading ? (
+                  <tr><td colSpan={4} className="text-center py-6 text-slate-500 animate-pulse font-medium">Loading users...</td></tr>
+                ) : users.length === 0 ? (
+                  <tr><td colSpan={4} className="text-center py-6 text-slate-500">No users found.</td></tr>
+                ) : users.map((u: any) => (
+                  <tr key={u._id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-4 px-6 font-semibold text-slate-900">@{u.username}</td>
+                    <td className="py-4 px-6 text-sm text-slate-500">{u.email}</td>
+                    <td className="py-4 px-6 text-sm text-slate-500 font-mono">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td className="py-4 px-6">
+                      <select 
+                        value={u.role || 'user'}
+                        onChange={(e) => handleRoleChange(u._id, e.target.value)}
+                        disabled={u._id === user._id}
+                        className={`text-sm font-bold rounded-lg px-3 py-1.5 outline-none cursor-pointer border shadow-sm transition-colors ${
+                          u.role === 'admin' || u.role === 'legacy_account' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 
+                          u.role === 'moderator' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 
+                          'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                        style={{ opacity: u._id === user._id ? 0.6 : 1 }}
+                      >
+                        <option value="user">User</option>
+                        <option value="moderator">Moderator</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
