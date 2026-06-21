@@ -11,8 +11,7 @@ const NAV = [
   { href: '/qa',          icon: 'bi-chat-dots',        label: 'Questions' },
   { href: '/qa/ask',      icon: 'bi-plus-circle',      label: 'Ask' },
   { href: '/bookmarks',   icon: 'bi-bookmark',         label: 'Bookmarks' },
-  { href: '/leaderboard', icon: 'bi-trophy',           label: 'Leaderboard' },
-  { href: '/profile',     icon: 'bi-sliders2',         label: 'Settings' },
+  { href: '/leaderboard', icon: 'bi-trophy',           label: 'Leaderboard' }
 ];
 
 const ADMIN_NAV = [
