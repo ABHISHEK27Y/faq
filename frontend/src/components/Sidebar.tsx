@@ -23,6 +23,7 @@ const ADMIN_NAV = [
 function isActive(href: string, pathname: string) {
   if (href === '/') return pathname === '/';
   if (href === '/qa' && pathname.startsWith('/qa/ask')) return false;
+  if (href === '/faqs' && pathname.startsWith('/faqs/submit')) return false;
   return pathname === href || pathname.startsWith(href + '/');
 }
 

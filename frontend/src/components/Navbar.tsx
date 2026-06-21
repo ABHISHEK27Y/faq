@@ -197,13 +197,6 @@ export default function Navbar() {
                   >
                     <i className="bi bi-person" /> My Profile
                   </Link>
-                  <Link
-                    href="/profile"
-                    onClick={() => setShowProfileDropdown(false)}
-                    style={{ padding: '8px 10px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--ink)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: 8 }}
-                  >
-                    <i className="bi bi-gear" /> Settings
-                  </Link>
                 </div>
                 <div style={{ padding: '6px', borderTop: '1px solid var(--hairline)' }}>
                   <button
