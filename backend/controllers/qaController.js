@@ -36,15 +36,29 @@ const autoAnswerQuestion = async (questionId, title, body, authorId, io) => {
 
     const context = scoredFaqs.map(item => `Q: ${item.faq.title}\nA: ${item.faq.answer}`).join("\n\n");
 
+    const baseContext = `
+      Base Platform Context (ALWAYS TRUE):
+      - Internship Name: Vicharanashala Internship (VINS)
+      - Organization: Lab of Prof. Sudarshan Iyengar at IIT Ropar.
+      - Duration: Two-month duration with a one-month grace period. Start anytime in 2026. Finish by 31 Dec 2026.
+      - Format: Entirely online. Open-source software engineering for India-centric problems (Annam.AI, ViBe).
+      - Stipend: No stipend. It is an unpaid internship, but the programme is completely free.
+      - Badges: Bronze (Training), Silver (OS Project), Gold (Significant feature), Platinum (Visit lab with stipend).
+      - Workload: 6 to 10 hours of focused work a day.
+      - NOC (No Objection Certificate) from college is mandatory to start.
+    `;
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const prompt = `You are 'Yaksha', an ultra-fast AI assistant for VLED. A user just asked a question in the community hub.
+    const prompt = `You are 'Yaksha', an ultra-fast AI assistant for the Vicharanashala Internship (samagama.in). A user just asked a question in the community hub.
 Analyze the user's language and tone from their question. If the user communicates using Gen-Z slang or Hinglish, respond back in a matching chill, relatable Gen-Z/Hinglish tone.
 Otherwise, if the user communicates in standard or formal language, respond strictly in a professional, clear, and helpful tone.
-You MUST base your answer strictly on the following FAQ knowledge base context. If the context doesn't fully answer the question, say so politely.
+You MUST base your answer strictly on the following context. If the context doesn't fully answer the question, say so politely but try to be as helpful as possible using the Base Platform Context.
 
-FAQ CONTEXT:
-${context}
+${baseContext}
+
+FAQ DATABASE CONTEXT:
+${context || "No specific FAQ found, rely on Base Platform Context."}
 
 USER'S QUESTION:
 Title: ${title}
