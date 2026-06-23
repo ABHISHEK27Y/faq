@@ -67,6 +67,11 @@ const generateChatResponse = async (req, res) => {
       User message: "${sanitizedMessage}"
     `;
 
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'dummy_key') {
+      return res.json({ reply: "I am Yaksha! My AI brain is currently asleep because there is no GEMINI_API_KEY configured in the .env file. Add one to wake me up! 🧠" });
+    }
+
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
 
@@ -74,7 +79,7 @@ const generateChatResponse = async (req, res) => {
   } catch (error) {
     console.error('Gemini API Error:', error);
     // Fallback response if API fails or key is invalid
-    res.status(500).json({ reply: "I'm currently experiencing some server issues. Please try again in a little bit! 😅" });
+    res.json({ reply: "I'm currently experiencing some server issues because the Gemini AI servers are overloaded. Please try again in a little bit! 😅" });
   }
 };
 
