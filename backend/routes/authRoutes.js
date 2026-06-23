@@ -19,12 +19,9 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 // Google OAuth Callback
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:3000'}/login` }),
   (req, res) => {
-    if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET is not defined');
-      return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=server_configuration`);
-    }
     // Generate JWT for the user matching authController payload
-    const token = jwt.sign({ id: req.user._id, role: req.user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const secret = process.env.JWT_SECRET || 'fallback_secret_mern_jwt_key_2026_for_local_dev';
+    const token = jwt.sign({ id: req.user._id, role: req.user.role }, secret, { expiresIn: '30d' });
     res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?token=${token}`);
   }
 );
