@@ -95,7 +95,7 @@ export default function Home() {
                 </div>
                 <div className="category-body">
                   <div className="category-name" style={{ color: s.color }}>{cat.name}</div>
-                  <div className="category-count" style={{ color: s.color }}>{count || cat.faqCount || 0} articles</div>
+                  <div className="category-count" style={{ color: s.color }}>{cat.questionCount || count || 0} articles</div>
                 </div>
                 <i className="bi bi-arrow-right category-arrow" style={{ color: s.color }} />
               </Link>

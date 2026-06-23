@@ -27,7 +27,8 @@ export default function ChatbotWidget() {
     setLoading(true);
     
     try {
-      const response = await axios.post('http://localhost:5000/api/chatbot', { message: userMessage });
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await axios.post(`${API_URL}/api/chatbot`, { message: userMessage });
       setMessages(prev => [...prev, { role: 'bot', text: response.data.reply }]);
     } catch (error) {
       setMessages(prev => [...prev, { role: 'bot', text: "I'm having trouble connecting to my brain right now." }]);
