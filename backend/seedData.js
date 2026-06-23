@@ -9,7 +9,31 @@ const seedDatabase = async () => {
     const count = await User.countDocuments();
     if (count === 0) {
       await importSqliteData();
-      console.log('🌱 Database seeded with real SQLite data!');
+      
+      // Fallback: If importSqliteData failed or found no data (because teammate doesn't have db.sqlite3)
+      const newCount = await User.countDocuments();
+      if (newCount === 0) {
+        console.log('⚠️ SQLite import yielded no data. Seeding fallback dummy data...');
+        const Category = require('./models/FAQ').Category;
+        const bcrypt = require('bcryptjs');
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash('password123', salt);
+
+        const admin = await User.create({ username: 'admin', email: 'admin@example.com', password: hash, role: 'admin' });
+        const user1 = await User.create({ username: 'johndoe', email: 'john@example.com', password: hash });
+
+        const cat = await Category.create({ name: 'General', slug: 'general' });
+
+        await FAQ.create({ title: 'What is Samagama?', question: 'Can you explain what Samagama is?', answer: 'Samagama is an interactive FAQ and Q&A platform.', category: cat._id, status: 'published' });
+        await FAQ.create({ title: 'How to login?', question: 'Where is the login page?', answer: 'Click the login button in the top right corner.', category: cat._id, status: 'published' });
+
+        const q1 = await Question.create({ title: 'How do I submit an FAQ?', body: 'I would like to suggest a new FAQ. How do I do that?', author: user1._id, category: cat._id });
+        await Answer.create({ question: q1._id, author: admin._id, body: 'You can suggest an FAQ from the Moderation page or the submit form!', isAccepted: true });
+
+        console.log('🌱 Fallback dummy data seeded successfully!');
+      } else {
+        console.log('🌱 Database seeded with real SQLite data!');
+      }
     }
 
     // Force migration of any old embeddings (e.g. 3072 dims) to the strict 768 dim schema

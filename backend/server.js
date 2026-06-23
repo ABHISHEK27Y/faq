@@ -163,18 +163,25 @@ app.get('/', (req, res) => {
 
 // Database Connection via Memory Server with local persistence
 const path = require('path');
+const fs = require('fs');
+
 const startServer = async () => {
   try {
     let uri = process.env.MONGO_URI;
     if (!uri) {
+      const dbPath = path.join(__dirname, 'mongo-data');
+      if (!fs.existsSync(dbPath)) {
+        fs.mkdirSync(dbPath, { recursive: true });
+      }
       const mongoServer = await MongoMemoryServer.create({
         instance: {
-          dbPath: path.join(__dirname, 'mongo-data'),
+          dbPath: dbPath,
           storageEngine: 'wiredTiger'
         }
       });
       uri = mongoServer.getUri();
       console.log('✅ MongoDB Memory Server Connected (Persistent)');
+      console.log(`🔌 Local Mongo URI: ${uri}`);
     } else {
       console.log('✅ Connected to MongoDB via MONGO_URI');
     }

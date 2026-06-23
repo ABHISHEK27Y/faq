@@ -6,7 +6,7 @@ const { Question, Answer } = require('./models/QA');
 const { FAQ } = require('./models/FAQ');
 
 async function importSqliteData() {
-  const sqlitePath = path.join(__dirname, '..', '..', 'faq_project', 'db.sqlite3');
+  const sqlitePath = path.join(__dirname, 'seed_db.sqlite3');
   
   try {
     const db = await open({
